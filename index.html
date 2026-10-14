@@ -450,7 +450,7 @@
       return {name:short,hint:long||'Resultado do mapa',lat:feature.geometry.coordinates[1],lon:feature.geometry.coordinates[0]};
     }
     function hideSuggestions(){$('suggestions').hidden=true;$('suggestions').innerHTML='';}
-    const nearbyCity='Francisco Beltrão, Paraná, Brasil';
+    
     function renderAddressResults(results,field,source){
       $('suggestions').hidden=false;
       if(!results.length){$('suggestions').innerHTML='<div class="small-info" style="padding:11px">Endereço não encontrado. Tente o nome da rua, número e cidade ou escolha o destino no mapa.</div>';return;}
@@ -481,11 +481,11 @@
         const response=await fetch(url,{signal:state.abort.signal});if(!response.ok)throw Error('Não foi possível pesquisar');
         const data=await response.json();if(seq!==state.searchSeq)return;
         renderAddressResults(data.results||[],field,'Busca local');
-      }catch(err){if(err.name!=='AbortError'&&seq===state.searchSeq)$('suggestions').innerHTML='<div class="small-info" style="padding:11px">Pesquisa indisponível. Confirme que abriu pelo servidor v6 (iniciar-vaigo.bat) e que possui internet.</div>';}
+      }catch(err){if(err.name!=='AbortError'&&seq===state.searchSeq)$('suggestions').innerHTML='<div class="small-info" style="padding:11px">Pesquisa indisponível. Verifique sua conexão ou tente buscar por outro ponto de referência.</div>';}
     }
     function showManualSearch(field,message='Sugestões automáticas indisponíveis.'){
       $('suggestions').hidden=false;
-      $('suggestions').innerHTML=`<div class="small-info" style="padding:11px">${escapeHtml(message)}</div><button type="button" class="suggestion" id="manualSearchButton"><span class="suggestion-icon">⌕</span><span><strong>Pesquisar endereço completo</strong><span class="suggestion-hint">Ex.: Rua Maringá 1520, Francisco Beltrão, PR</span></span></button>`;
+      $('suggestions').innerHTML=`<div class="small-info" style="padding:11px">${escapeHtml(message)}</div><button type="button" class="suggestion" id="manualSearchButton"><span class="suggestion-icon">⌕</span><span><strong>Pesquisar endereço completo</strong><span class="suggestion-hint">Ex.: Av. Paulista, 1000, São Paulo, SP</span></span></button>`;
       $('manualSearchButton').addEventListener('click',()=>manualAddressSearch(field));
     }
     function bindSearch(id,field){
@@ -531,11 +531,22 @@
       if(state.rideStage!=='idle')return;
       if(!state.dest){toast('Selecione um destino antes de solicitar a corrida.');return;}
       state.running=true;state.rideStage='searching';state.lockedFare=calc();state.rideProgress=0;
-      setTab('passenger');render();toast('Solicitação simulada criada. Abra Motorista e app para aceitar.');
+      setTab('passenger');render();toast('Procurando motoristas próximos...');
+      clearTimeout(state.autoAcceptTimer);
+      state.autoAcceptTimer = setTimeout(() => {
+        if (state.rideStage === 'searching') {
+          driverAction();
+        }
+      }, 3500);
     }
     function driverAction(){
       if(state.rideStage==='searching'){
-        state.rideStage='accepted';render();toast('Motorista virtual aceitou o pedido.');return;
+        state.rideStage='accepted';render();toast('Motorista virtual aceitou a corrida! A caminho do embarque...');
+        clearTimeout(state.autoStartTimer);
+        state.autoStartTimer = setTimeout(() => {
+          if (state.rideStage === 'accepted') driverAction();
+        }, 3000);
+        return;
       }
       if(state.rideStage==='accepted'){
         state.rideStage='driving';state.rideProgress=0;
