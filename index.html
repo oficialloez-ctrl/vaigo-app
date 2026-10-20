@@ -140,6 +140,12 @@
       .quick-dest { gap:5px; padding-top:10px; }
       .quick-dest button { font-size:10px; padding:7px 8px; }
       .live-row { margin-top:8px; }
+      .panel-top { max-height:calc(50dvh - 20px); overflow-y:auto; overscroll-behavior:contain; }
+      #vaigoTools { padding:9px 0 !important; border-bottom:1px solid #eee; background:#fff; gap:6px; pointer-events:auto; position:relative; z-index:auto; }
+      #vaigoTools button { font-size:11px; padding:8px !important; }
+      #vaigoToolsMsg { line-height:1.4; }
+      .address-search input { position:relative; z-index:1; touch-action:manipulation; }
+      .panel-body { z-index:1; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; }
       .panel-body { position:absolute; bottom:max(12px,env(safe-area-inset-bottom)); left:12px; right:12px; max-height:min(50dvh,490px); border-radius:16px; background:#fff; box-shadow:0 -5px 33px #0003; padding:18px 15px 18px; pointer-events:auto; overflow-y:auto; }
       .tab-bar { margin-bottom:13px; }
       .vehicle { min-height:65px; grid-template-columns:49px minmax(0,1fr) auto; padding:6px; gap:8px; }
@@ -662,6 +668,23 @@ $('findAddressButton').addEventListener('click',()=>manualAddressSearch('destina
     $('resetSettings').addEventListener('click',()=>{for(const [id,val] of Object.entries(DEFAULT))$(id).value=val;updateConfig();toast('Parâmetros restaurados.');});
     document.addEventListener('pointerdown',e=>{if(!$('suggestions').contains(e.target)&&!e.target.matches('#originInput,#destinationInput'))hideSuggestions();});
     if(window.L)initMap();else window.addEventListener('load',()=>{if(window.L)initMap();else $('mapFallback').style.display='flex';});
+    // Keep additional tools inside the scrollable lower panel on small screens.
+    // Previously the toolbar remained in a full-screen pointer-events:none
+    // sidebar layer, where it could visually overlap search and block touches.
+    const mobileLayout = window.matchMedia('(max-width:810px)');
+    const toolsBar = document.getElementById('vaigoTools');
+    const lowerPanel = document.querySelector('.panel-body');
+    const sidebarInner = document.querySelector('.sidebar-inner');
+    function placeToolsBar() {
+      if (mobileLayout.matches) {
+        if (toolsBar.parentElement !== lowerPanel) lowerPanel.prepend(toolsBar);
+      } else if (toolsBar.parentElement !== sidebarInner) {
+        sidebarInner.insertBefore(toolsBar, lowerPanel);
+      }
+    }
+    placeToolsBar();
+    mobileLayout.addEventListener?.('change',placeToolsBar);
+    window.addEventListener('resize',placeToolsBar);
     render();
     window.addEventListener('pagehide',()=>{if(state.gpsWatch!==null)navigator.geolocation.clearWatch(state.gpsWatch);});
     
