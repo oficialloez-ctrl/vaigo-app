@@ -171,7 +171,7 @@
     <aside class="sidebar" aria-label="Planejamento da corrida">
       <div class="sidebar-inner">
         <div class="panel-top">
-          <div class="brand-row"><div class="brand" aria-label="VaiGo">vaiGo<span class="brand-point"></span></div><div style="display:flex;align-items:center;gap:9px"><span class="demo-chip">SIMULAÇÃO V7</span><button type="button" class="profile-dot" id="settingsShortcut" aria-label="Abrir administração de teste"><svg class="ui-icon"><use href="#ico-settings"/></svg></button></div></div>
+          <div class="brand-row"><div class="brand" aria-label="VaiGo">vaiGo<span class="brand-point"></span></div><div style="display:flex;align-items:center;gap:9px"><span class="demo-chip">SIMULAÇÃO V8</span><button type="button" class="profile-dot" id="settingsShortcut" aria-label="Abrir administração de teste"><svg class="ui-icon"><use href="#ico-settings"/></svg></button></div></div>
           <h1>Para onde vamos?</h1>
           <p class="description">Sua próxima viagem começa aqui. Calcule o preço antes de sair.</p>
           <div class="inputs">
@@ -194,6 +194,7 @@
 <button type="button" id="vaigoFavSave" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">☆ Salvar destino</button>
 <button type="button" id="vaigoFavShow" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">★ Favoritos</button>
 <button type="button" id="vaigoPinToggle" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">📍 Ajustar embarque</button>
+<button type="button" id="vaigoConfirmHouse" style="padding:9px;border-radius:8px;border:1px solid #b5d6bb;background:#ecf7ee">✓ Confirmar entrada da residência</button>
 <button type="button" id="vaigoDrivers" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">🚘 Motoristas de teste</button>
 <div id="vaigoToolsMsg" aria-live="polite" style="flex-basis:100%;font-size:11px;color:#666">Números não confirmados devem ser conferidos no mapa. Motoristas são simulados.</div></div>
 <div class="panel-body">
@@ -376,7 +377,7 @@
     function updateMarkers() {
       if(!state.map)return;
       state.startMarker.setLatLng([state.origin.lat,state.origin.lon]);
-      if(state.dest) {if(!state.destMarker){state.destMarker=L.marker([state.dest.lat,state.dest.lon],{icon:leafIcon('dest'),draggable:true}).addTo(state.map);state.destMarker.on('dragend',()=>{if(state.running)return;const p=state.destMarker.getLatLng();chooseDestination({name:'Destino ajustado no mapa',lat:p.lat,lon:p.lng,exactNumber:false});vaigoMessage('Destino corrigido manualmente; número da residência não verificado.');});}else state.destMarker.setLatLng([state.dest.lat,state.dest.lon]);}
+      if(state.dest) {if(!state.destMarker){state.destMarker=L.marker([state.dest.lat,state.dest.lon],{icon:leafIcon('dest'),draggable:true}).addTo(state.map);state.destMarker.on('dragend',()=>{if(state.running)return;const p=state.destMarker.getLatLng();chooseDestination({name:state.dest?.name||'Destino ajustado no mapa',enteredAddress:state.dest?.enteredAddress||$('destinationInput').value,requestedNumber:state.dest?.requestedNumber,numberRequested:!!state.dest?.numberRequested,lat:p.lat,lon:p.lng,exactNumber:false});vaigoMessage('Marcador posicionado. Clique em Confirmar entrada da residência para usar esse ponto como destino manual.');});}else state.destMarker.setLatLng([state.dest.lat,state.dest.lon]);}
       else if(state.destMarker){state.map.removeLayer(state.destMarker);state.destMarker=null;}
       if(state.routeLine){state.map.removeLayer(state.routeLine);state.routeLine=null;}
       if(state.dest) {const coords=state.route?.coords || [[state.origin.lat,state.origin.lon],[state.dest.lat,state.dest.lon]];state.routeLine=L.polyline(coords,{color:'#121212',weight:6,opacity:.90,lineCap:'round',lineJoin:'round',dashArray:state.route?'':'6,10'}).addTo(state.map);}
@@ -405,10 +406,13 @@
     function chooseDestination(p){
       if(state.running)return;
       state.dest=p;
-      $('destinationInput').value=p.name;
+      const entered=$('destinationInput').value.trim();
+      const requestedNumber=(entered.match(/(?:^|[\s,])(\d{1,6})(?:[\s,]|$)/)||[])[1];
+      if(requestedNumber&&!p.exactNumber&&!p.manualVerified){p.numberRequested=true;p.requestedNumber=requestedNumber;p.enteredAddress=entered;}
+      $('destinationInput').value=p.enteredAddress||p.name;
       hideSuggestions();
       getRoute();
-      toast('Destino selecionado. Calculando estimativa.');if(p.numberRequested&&!p.exactNumber)vaigoMessage('⚠️ Número residencial não confirmado na base cartográfica. Arraste o marcador até o local correto.');else vaigoMessage('Destino escolhido. Você pode arrastar os marcadores para refinar os pontos.');
+      toast('Destino selecionado. Calculando estimativa.');if(p.numberRequested&&!p.exactNumber)vaigoMessage('⚠️ Número não encontrado na base. Arraste o pino de destino até a entrada correta e clique em Confirmar entrada da residência.');else vaigoMessage('Destino escolhido. Você pode arrastar os marcadores para refinar os pontos.');
     }
     function chooseOrigin(p,mode='manual'){
       if(state.running)return;
@@ -552,7 +556,8 @@ function bindSearch(id,field){
       input.addEventListener('focus',()=>{state.searchField=field;if(input.value.length>=3 && !/Minha localização atual|São Paulo ·/.test(input.value))searchAddress(input.value,field);});
       input.addEventListener('keydown',e=>{if(e.key==='Escape')hideSuggestions();if(e.key==='Enter'){e.preventDefault();const first=$('suggestions').querySelector('[data-suggest]');if(first)first.click();else manualAddressSearch(field);}});
     }
-    $('findAddressButton').addEventListener('click',()=>manualAddressSearch('destination'));
+    $('vaigoConfirmHouse')?.addEventListener('click',()=>{if(!state.dest){vaigoMessage('Pesquise e selecione primeiro um destino.');return;}state.dest.manualVerified=true;state.dest.exactNumber=false;state.dest.name=state.dest.enteredAddress||state.dest.name;$('destinationInput').value=state.dest.name;vaigoMessage('✓ Ponto de chegada confirmado manualmente por você. Não houve verificação oficial do número residencial.');toast('Ponto de chegada confirmado no mapa.');});
+$('findAddressButton').addEventListener('click',()=>manualAddressSearch('destination'));
     function setTab(t){state.tab=t;render();if(state.map)setTimeout(()=>state.map.invalidateSize(),80);}
     function updateConfig(){
       const config={};for(const id of Object.keys(DEFAULT))config[id]=num(id,DEFAULT[id],id==='commission'?0:0,100);
