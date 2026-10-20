@@ -171,7 +171,7 @@
     <aside class="sidebar" aria-label="Planejamento da corrida">
       <div class="sidebar-inner">
         <div class="panel-top">
-          <div class="brand-row"><div class="brand" aria-label="VaiGo">vaiGo<span class="brand-point"></span></div><div style="display:flex;align-items:center;gap:9px"><span class="demo-chip">SIMULAÇÃO V8</span><button type="button" class="profile-dot" id="settingsShortcut" aria-label="Abrir administração de teste"><svg class="ui-icon"><use href="#ico-settings"/></svg></button></div></div>
+          <div class="brand-row"><div class="brand" aria-label="VaiGo">vaiGo<span class="brand-point"></span></div><div style="display:flex;align-items:center;gap:9px"><span class="demo-chip">SIMULAÇÃO V9</span><button type="button" class="profile-dot" id="settingsShortcut" aria-label="Abrir administração de teste"><svg class="ui-icon"><use href="#ico-settings"/></svg></button></div></div>
           <h1>Para onde vamos?</h1>
           <p class="description">Sua próxima viagem começa aqui. Calcule o preço antes de sair.</p>
           <div class="inputs">
@@ -184,7 +184,7 @@
           </div>
           <div class="suggestions" id="suggestions" hidden role="listbox" aria-label="Sugestões de endereços"></div><button type="button" id="findAddressButton" style="margin:8px 0 0 19px;border:0;border-radius:8px;background:#171717;color:#fff;font-weight:700;font-size:12px;padding:11px 13px;cursor:pointer">Pesquisar destino</button>
           <div class="live-row"><span class="status" id="gpsStatus"><span class="status-dot"></span><span id="gpsLabel">GPS não ativado</span></span><button class="linkish" id="resetRouteButton">Limpar rota</button></div>
-          <div class="quick-dest" aria-label="Destinos sugeridos">
+          <div class="quick-dest" aria-label="Destinos sugeridos" style="display:none">
             <button data-quick="ibirapuera">Parque Ibirapuera</button>
             <button data-quick="congonhas">Congonhas</button>
             <button data-quick="eldorado">Shopping Eldorado</button>
@@ -194,6 +194,7 @@
 <button type="button" id="vaigoFavSave" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">☆ Salvar destino</button>
 <button type="button" id="vaigoFavShow" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">★ Favoritos</button>
 <button type="button" id="vaigoPinToggle" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">📍 Ajustar embarque</button>
+<button type="button" id="vaigoUseGPS" style="padding:9px;border-radius:8px;border:1px solid #b5d6bb;background:#ecf7ee">◎ Usar GPS no embarque</button>
 <button type="button" id="vaigoConfirmHouse" style="padding:9px;border-radius:8px;border:1px solid #b5d6bb;background:#ecf7ee">✓ Confirmar entrada da residência</button>
 <button type="button" id="vaigoDrivers" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">🚘 Motoristas de teste</button>
 <div id="vaigoToolsMsg" aria-live="polite" style="flex-basis:100%;font-size:11px;color:#666">Números não confirmados devem ser conferidos no mapa. Motoristas são simulados.</div></div>
@@ -432,10 +433,10 @@
       if(err?.code===1)msg='Localização negada. Permita o GPS nas configurações do navegador.';
       else if(err?.code===2)msg='Localização indisponível. Verifique o sinal do celular.';
       else if(err?.code===3)msg='Tempo esgotado ao buscar localização.';
-      pauseGPS('GPS indisponível');toast(msg);
+      pauseGPS('GPS indisponível');vaigoMessage(msg+' Você pode definir o embarque manualmente tocando no mapa.');toast(msg);
     }
     function requestGPS() {
-      if(state.gpsWatch!==null){pauseGPS();toast('GPS pausado. Toque novamente para reativar.');return;}
+      if(state.gpsWatch!==null){pauseGPS();vaigoMessage('GPS pausado. Clique no alvo de localização para reativar.');toast('GPS pausado. Toque novamente para reativar.');return;}
       if(!window.isSecureContext){toast('Para usar GPS, abra o aplicativo em HTTPS ou localhost.');$('gpsLabel').textContent='GPS exige HTTPS';return;}
       if(!navigator.geolocation){toast('Este navegador não oferece GPS.');return;}
       $('gpsLabel').textContent='Localizando...';
@@ -460,7 +461,7 @@
           // Atualiza rota apenas quando houver deslocamento significativo, evitando chamadas em excesso.
           if(!first&&moved&&state.dest&&!state.running)getRoute();
         }
-        if(first){toast('GPS ativado. Toque no botão novamente para pausar.');fitMap();}
+        if(first){toast('GPS ativado. Toque no botão novamente para pausar.');vaigoMessage('GPS ativo com precisão ±'+Math.round(accuracy||0)+' m. Clique em Usar GPS no embarque para aplicar a localização, ou ajuste o pino.');fitMap();}
       },gpsError,{enableHighAccuracy:true,maximumAge:3000,timeout:16000});
     }
     setInterval(()=>{
@@ -519,6 +520,13 @@
 state.favoritePlaces=[];
 try{const saved=JSON.parse(localStorage.getItem('vaigo_favorites_v1')||'[]');if(Array.isArray(saved))state.favoritePlaces=saved.filter(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lon)).slice(0,20)}catch(e){}
 state.pickupAdjust=false;state.demoDrivers=[];state.demoDriverTimer=null;
+$('vaigoUseGPS')?.addEventListener('click',()=>{
+ if(!state.gps || !state.userLocation){vaigoMessage('GPS ainda não disponível. Clique no alvo ao lado da origem, autorize a localização e tente novamente.');if(state.gpsWatch===null)requestGPS();return;}
+ state.pickupAdjust=false;state.pickupMode='gps';
+ state.origin={name:'Minha localização atual',lat:state.userLocation.lat,lon:state.userLocation.lon};
+ $('originInput').value='Minha localização atual';getRoute();fitMap();
+ vaigoMessage('Embarque restaurado para a posição informada pelo GPS (precisão ±'+Math.round(state.gpsAccuracy||0)+' m). Se necessário, ajuste o pino.');
+});
 function vaigoMessage(s){const el=$('vaigoToolsMsg');if(el)el.textContent=s;}
 function vaigoSavedFavorites(){try{localStorage.setItem('vaigo_favorites_v1',JSON.stringify(state.favoritePlaces))}catch(e){vaigoMessage('Não foi possível salvar neste navegador.');}}
 function vaigoShowFavorites(){
