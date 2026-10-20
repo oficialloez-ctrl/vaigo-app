@@ -384,25 +384,30 @@
       if(state.dest) {const coords=state.route?.coords || [[state.origin.lat,state.origin.lon],[state.dest.lat,state.dest.lon]];state.routeLine=L.polyline(coords,{color:'#121212',weight:6,opacity:.90,lineCap:'round',lineJoin:'round',dashArray:state.route?'':'6,10'}).addTo(state.map);}
       fitMap();
     }
-    let routingSeq=0;
+    let routingSeq=0, activeRouteController=null;
     async function getRoute(){
       const seq=++routingSeq;
+      if(activeRouteController)activeRouteController.abort();
+      activeRouteController=null;
       state.route=null;
       if(!state.dest){state.distance=7.2;state.duration=18;state.routeQuality='Exemplo';$('manualKm').value=7.2;$('manualMin').value=18;updateMarkers();render();return;}
       updateEstimatedRoute(state.origin,state.dest);updateMarkers();
       const url=`https://router.project-osrm.org/route/v1/driving/${state.origin.lon},${state.origin.lat};${state.dest.lon},${state.dest.lat}?overview=full&geometries=geojson&steps=false`;
       try {
-        const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),9000);
-        const response=await fetch(url,{signal:controller.signal});clearTimeout(timeout);
+        const controller=new AbortController();activeRouteController=controller;
+        const response=await fetch(url,{signal:AbortSignal.any([controller.signal,AbortSignal.timeout(9000)])});
         if(!response.ok) throw Error('Sem rota');
         const d=await response.json();if(seq!==routingSeq||!state.dest||!d.routes?.[0])return;
         const route=d.routes[0];const distance=route.distance/1000,duration=route.duration/60;
         if(!Number.isFinite(distance)||!Number.isFinite(duration)||distance<=0||distance>3000)throw Error('Rota inválida');
         state.distance=Math.max(.5,Math.round(distance*10)/10);state.duration=Math.max(1,Math.round(duration));state.routeQuality='Rota viária';
-        state.route={coords:route.geometry.coordinates.map(c=>[c[1],c[0]])};
+        const points=route.geometry?.coordinates;
+        if(!Array.isArray(points)||points.length<2||points.some(c=>!Array.isArray(c)||c.length<2||!Number.isFinite(c[0])||!Number.isFinite(c[1])))throw Error('Trajeto inválido');
+        state.route={coords:points.map(c=>[c[1],c[0]])};
         $('manualKm').value=state.distance;$('manualMin').value=state.duration;
         updateMarkers();render();
       }catch(e){ if(seq!==routingSeq)return;state.routeQuality='Aproximada';render(); }
+      finally {if(seq===routingSeq)activeRouteController=null;}
     }
     function chooseDestination(p){
       if(state.running)return;
