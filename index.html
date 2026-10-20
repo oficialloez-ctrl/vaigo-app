@@ -171,7 +171,7 @@
     <aside class="sidebar" aria-label="Planejamento da corrida">
       <div class="sidebar-inner">
         <div class="panel-top">
-          <div class="brand-row"><div class="brand" aria-label="VaiGo">vaiGo<span class="brand-point"></span></div><div style="display:flex;align-items:center;gap:9px"><span class="demo-chip">SIMULAÇÃO V5</span><button type="button" class="profile-dot" id="settingsShortcut" aria-label="Abrir painel financeiro"><svg class="ui-icon"><use href="#ico-settings"/></svg></button></div></div>
+          <div class="brand-row"><div class="brand" aria-label="VaiGo">vaiGo<span class="brand-point"></span></div><div style="display:flex;align-items:center;gap:9px"><span class="demo-chip">SIMULAÇÃO V7</span><button type="button" class="profile-dot" id="settingsShortcut" aria-label="Abrir administração de teste"><svg class="ui-icon"><use href="#ico-settings"/></svg></button></div></div>
           <h1>Para onde vamos?</h1>
           <p class="description">Sua próxima viagem começa aqui. Calcule o preço antes de sair.</p>
           <div class="inputs">
@@ -197,7 +197,7 @@
 <button type="button" id="vaigoDrivers" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">🚘 Motoristas de teste</button>
 <div id="vaigoToolsMsg" aria-live="polite" style="flex-basis:100%;font-size:11px;color:#666">Números não confirmados devem ser conferidos no mapa. Motoristas são simulados.</div></div>
 <div class="panel-body">
-          <div class="tab-bar" role="tablist" aria-label="Painéis"><button id="passengerTab" role="tab" aria-selected="true" class="active">Passageiro</button><button id="financeTab" role="tab" aria-selected="false">Motorista e app</button></div>
+          <div class="tab-bar" role="tablist" aria-label="Painéis"><button id="passengerTab" role="tab" aria-selected="true" class="active">Passageiro</button><button id="financeTab" role="tab" aria-selected="false">Motorista</button><button id="adminTab" role="tab" aria-selected="false">ADM</button></div>
           <section id="passengerPanel" role="tabpanel" aria-labelledby="passengerTab">
             <div class="section-title"><h2>Escolha uma viagem</h2><small>Valores estimados</small></div>
             <div class="vehicle-list" id="vehicleList"></div>
@@ -207,7 +207,17 @@
             <p class="note">Demonstração independente. Não solicita motoristas nem processa pagamentos reais. Com destino selecionado, a distância é calculada por rota quando o serviço de mapas está disponível.</p>
           </section>
           <section id="financePanel" class="hidden" role="tabpanel" aria-labelledby="financeTab">
-            <div id="driverRequest" class="fare-card" style="border:1px solid #dedede"><strong id="driverStatus">Painel do motorista · disponível</strong><p id="driverRequestInfo" class="small-info">Aguardando solicitação simulada do passageiro.</p><button id="driverAction" class="btn-primary" style="margin-top:9px;display:none">Aceitar corrida</button></div><div class="section-title"><h2>Divisão da corrida</h2><small>Transparência por viagem</small></div>
+            <div id="driverRequest" class="fare-card" style="border:1px solid #dedede"><strong id="driverStatus">Painel do motorista · disponível</strong><p id="driverRequestInfo" class="small-info">Aguardando solicitação simulada do passageiro.</p><button id="driverAction" class="btn-primary" style="margin-top:9px;display:none">Aceitar corrida</button></div><div class="fare-card" style="margin-top:12px">
+  <div class="stat-small">Valor a receber pela viagem (simulação)</div>
+  <div class="money-big green" id="driverOfferAmount">R$ 21,03</div>
+  <div id="driverOfferRoute" class="small-info">Aguardando rota · Distância e tempo estimados</div>
+</div>
+<p class="note">Esta é uma simulação. Não há motorista real conectado. O valor a receber é calculado descontando a taxa da plataforma, sem estimativa de combustível.</p>
+</section>
+<section id="adminPanel" class="hidden" role="tabpanel" aria-labelledby="adminTab">
+  <div class="section-title"><h2>Administração da plataforma</h2><small>Ferramentas locais de teste</small></div>
+  <p class="note">Painel administrativo demonstrativo, ainda sem autenticação. Antes de operar com usuários reais, será necessário restringir o acesso no servidor.</p>
+  <div class="section-title"><h2>Divisão da corrida</h2><small>Transparência por viagem</small></div>
             <div class="fare-card"><div class="split-big"><div><div class="stat-small">Passageiro paga</div><div class="money-big" id="financeTotal">R$ 28,04</div></div><div style="text-align:right"><div class="stat-small">Motorista após gasolina</div><div id="financeDriverNet" class="green" style="font-size:20px;font-weight:820;white-space:nowrap">R$ 17,13</div></div></div><div class="divider"></div><div class="summary-line"><span>Receita do aplicativo (<span id="displayCommission">25%</span>)</span><strong id="appShare">R$ 7,01</strong></div><div class="summary-line"><span>Motorista antes da gasolina</span><strong id="driverGross">R$ 21,03</strong></div><div class="summary-line"><span>Custo estimado da gasolina</span><strong id="fuelCost">− R$ 3,90</strong></div><div class="divider"></div><div class="summary-line"><span><strong>Motorista após gasolina</strong></span><strong class="green" id="driverNet">R$ 17,13</strong></div></div>
             <div class="section-title"><h2>Ajustar valores</h2><small>Recalcula na hora</small></div>
             <div class="field-row"><div class="field"><label for="fuelPrice">Gasolina (R$/L)</label><input id="fuelPrice" type="number" min="0.1" max="30" step="0.01" value="6.50" inputmode="decimal" /></div><div class="field"><label for="kmPerLiter">Consumo (km/L)</label><input id="kmPerLiter" type="number" min="1" max="60" step="0.1" value="12" inputmode="decimal" /></div></div>
@@ -288,6 +298,8 @@
       $('routeMode').textContent=state.routeQuality;
       $('financeTotal').textContent=money(c.fare);
       $('financeDriverNet').textContent=money(c.driverNet);
+      $('driverOfferAmount').textContent=money(state.lockedFare?.driverGross??c.driverGross);
+      $('driverOfferRoute').textContent=`${state.distance.toFixed(1).replace('.',',')} km · ${Math.round(state.duration)} min estimados`;
       $('displayCommission').textContent=c.commission.toLocaleString('pt-BR')+'%';
       $('appShare').textContent=money(c.fee);
       $('driverGross').textContent=money(c.driverGross);
@@ -299,7 +311,7 @@
       $('rideHeadline').textContent=stage==='searching'?'Buscando motorista virtual':stage==='accepted'?'Motorista virtual aceitou':stage==='driving'?'Corrida simulada em andamento':'Corrida de demonstração';
       $('rideProgressLabel').textContent=stage==='searching'?'Abra “Motorista e app” para aceitar a chamada.':stage==='accepted'?'No painel do motorista, clique em “Iniciar corrida”.':stage==='driving'?`Motorista virtual percorreu ${Math.round(state.rideProgress*100)}% da rota.`:'';
       $('driverStatus').textContent=stage==='idle'?'Painel do motorista · disponível':stage==='searching'?'Nova solicitação de corrida':stage==='accepted'?'Corrida aceita':stage==='driving'?'Passageiro em viagem':'Disponível';
-      $('driverRequestInfo').textContent=stage==='idle'?'Aguardando solicitação simulada do passageiro.':`${defs[state.selected].name} · ${state.distance.toFixed(1)} km · ${Math.round(state.duration)} min · Passageiro: ${money(state.lockedFare?.fare??c.fare)} · Motorista após combustível: ${money(state.lockedFare?.driverNet??c.driverNet)}`;
+      $('driverRequestInfo').textContent=stage==='idle'?'Aguardando solicitação simulada do passageiro.':`${defs[state.selected].name} · ${state.distance.toFixed(1).replace('.',',')} km · ${Math.round(state.duration)} min · Receber: ${money(state.lockedFare?.driverGross??c.driverGross)}`;
       $('driverAction').style.display=stage==='searching'||stage==='accepted'||stage==='driving'?'flex':'none';
       $('driverAction').textContent=stage==='searching'?'Aceitar corrida':stage==='accepted'?'Iniciar corrida':stage==='driving'?'Concluir corrida':'';
       $('rideProgress').style.width=(state.rideProgress*100).toFixed(1)+'%';
@@ -309,10 +321,13 @@
       $('mapBadgeSubtitle').textContent=state.running?'Motorista virtual · não é uma corrida real':state.dest?`${state.distance.toFixed(1).replace('.',',')} km · ${Math.round(state.duration)} min`:'Ative o GPS ou pesquise um destino';
       $('passengerPanel').classList.toggle('hidden',state.tab!=='passenger');
       $('financePanel').classList.toggle('hidden',state.tab!=='finance');
+      $('adminPanel').classList.toggle('hidden',state.tab!=='admin');
       $('passengerTab').classList.toggle('active',state.tab==='passenger');
       $('financeTab').classList.toggle('active',state.tab==='finance');
+      $('adminTab').classList.toggle('active',state.tab==='admin');
       $('passengerTab').setAttribute('aria-selected',state.tab==='passenger');
       $('financeTab').setAttribute('aria-selected',state.tab==='finance');
+      $('adminTab').setAttribute('aria-selected',state.tab==='admin');
       renderHistory();
     }
     function escapeHtml(s) { return String(s).replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x])); }
@@ -604,9 +619,10 @@ function bindSearch(id,field){
       state.running=false;state.rideStage='idle';state.rideProgress=0;state.lockedFare=null;
       render();toast(`Corrida simulada concluída · passageiro ${money(c.fare)} · motorista ${money(c.driverNet)} após gasolina.`);
     }
-    $('settingsShortcut').addEventListener('click',()=>setTab('finance'));
+    $('settingsShortcut').addEventListener('click',()=>setTab('admin'));
     $('passengerTab').addEventListener('click',()=>setTab('passenger'));
     $('financeTab').addEventListener('click',()=>setTab('finance'));
+    $('adminTab').addEventListener('click',()=>setTab('admin'));
     $('gpsButton').addEventListener('click',requestGPS);
     $('recenterButton').addEventListener('click',()=>{if(state.userLocation&&state.map){state.map.setView([state.userLocation.lat,state.userLocation.lon],16);}else if(state.map){state.map.setView([state.origin.lat,state.origin.lon],15);toast('Toque em GPS para usar sua localização real.');}else toast('Mapa indisponível.');});
     $('zoomInButton').addEventListener('click',()=>state.map?.zoomIn());$('zoomOutButton').addEventListener('click',()=>state.map?.zoomOut());
