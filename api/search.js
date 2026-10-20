@@ -9,7 +9,7 @@ const lat=Number(req.query.lat)||-26.08,lon=Number(req.query.lon)||-53.05;
 if(q.length<3)return res.status(400).json({results:[]});
 const key=[q,mode,lat.toFixed(2),lon.toFixed(2)].join('|'),previous=cache.get(key);
 if(previous&&Date.now()-previous.at<120000)return res.json({results:previous.data});
-const results=[];const house=(q.match(/(?:^|[\\s,])(\\d{1,6})(?:[\\s,]|$)/)||[])[1]||null;
+const results=[];const house=(q.match(/(?:^|[\s,])(\d{1,6})(?:[\s,]|$)/)||[])[1]||null;
 try{
 const ph=await get('https://photon.komoot.io/api/?'+new URLSearchParams({q,limit:'12',lat:String(lat),lon:String(lon)}));
 for(const f of ph.features||[]){const p=f.properties||{},c=f.geometry?.coordinates||[];if(c.length!==2)continue;results.push({name:p.housenumber&&p.street?p.street+', '+p.housenumber:p.name||p.street||'Local',hint:[p.street,p.city||p.county,p.state].filter(Boolean).join(', '),lat:c[1],lon:c[0],type:['shop','amenity','tourism','office'].includes(p.osm_key)?'place':'address',exactNumber:!!house&&String(p.housenumber||'')===house&&!!p.street,numberRequested:!!house});}
