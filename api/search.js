@@ -14,12 +14,14 @@ try{
 const ph=await get('https://photon.komoot.io/api/?'+new URLSearchParams({q,limit:'12',lat:String(lat),lon:String(lon)}));
 for(const f of ph.features||[]){const p=f.properties||{},c=f.geometry?.coordinates||[];if(c.length!==2)continue;results.push({name:p.housenumber&&p.street?p.street+', '+p.housenumber:p.name||p.street||'Local',hint:[p.street,p.city||p.county,p.state].filter(Boolean).join(', '),lat:c[1],lon:c[0],type:['shop','amenity','tourism','office'].includes(p.osm_key)?'place':'address',exactNumber:!!house&&String(p.housenumber||'')===house&&!!p.street,numberRequested:!!house});}
 }catch(e){}
-if(mode==='address'||results.length<4||house){
+if(mode==='address'||results.length<7||house){
 const queries=[q];if(!/francisco beltr|paran|\bpr\b/i.test(q))queries.unshift(q+', Francisco Beltrão, Paraná, Brasil');
 for(const query of queries.slice(0,2)){
 try{const out=await get('https://nominatim.openstreetmap.org/search?'+new URLSearchParams({q:query,format:'jsonv2',addressdetails:'1',limit:'8',countrycodes:'br','accept-language':'pt-BR'}));for(const p of out){results.push({name:p.name||p.display_name.split(',').slice(0,2).join(','),hint:p.display_name,lat:Number(p.lat),lon:Number(p.lon),type:['highway','place'].includes(p.class)?'address':'place',exactNumber:!!house&&String(p.address?.house_number||'')===house,numberRequested:!!house});}if(out.length)break}catch(e){}
 }
 }
-const seen=new Set(),clean=results.filter(p=>{const key=p.lat.toFixed(4)+'|'+p.lon.toFixed(4)+'|'+p.name.toLowerCase();if(seen.has(key))return false;seen.add(key);return true}).map(p=>({...p,km:dist(lat,lon,p.lat,p.lon)})).sort((a,b)=>(b.exactNumber?1:0)-(a.exactNumber?1:0)||(a.km>30)-(b.km>30)||a.km-b.km).slice(0,12);
+// Para buscas por nome de local, a fonte Photon também devolve POIs com localização.
+ // O ponto da residência só recebe confirmação se o provedor devolver explicitamente o mesmo número.
+const seen=new Set(),clean=results.filter(p=>{const key=p.lat.toFixed(4)+'|'+p.lon.toFixed(4)+'|'+p.name.toLowerCase();if(seen.has(key))return false;seen.add(key);return true}).map(p=>({...p,km:dist(lat,lon,p.lat,p.lon)})).sort((a,b)=>(b.exactNumber?1:0)-(a.exactNumber?1:0)||(a.km>30)-(b.km>30)||a.km-b.km).slice(0,15);
 cache.set(key,{at:Date.now(),data:clean});return res.status(200).json({results:clean});
 };
