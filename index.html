@@ -190,7 +190,13 @@
             <button data-quick="eldorado">Shopping Eldorado</button>
           </div>
         </div>
-        <div class="panel-body">
+        <div id="vaigoTools" style="padding:9px 17px;background:#fff;border-bottom:1px solid #eee;display:flex;gap:6px;flex-wrap:wrap;position:relative;z-index:6">
+<button type="button" id="vaigoFavSave" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">☆ Salvar destino</button>
+<button type="button" id="vaigoFavShow" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">★ Favoritos</button>
+<button type="button" id="vaigoPinToggle" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">📍 Ajustar embarque</button>
+<button type="button" id="vaigoDrivers" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">🚘 Motoristas de teste</button>
+<div id="vaigoToolsMsg" aria-live="polite" style="flex-basis:100%;font-size:11px;color:#666">Números não confirmados devem ser conferidos no mapa. Motoristas são simulados.</div></div>
+<div class="panel-body">
           <div class="tab-bar" role="tablist" aria-label="Painéis"><button id="passengerTab" role="tab" aria-selected="true" class="active">Passageiro</button><button id="financeTab" role="tab" aria-selected="false">Motorista e app</button></div>
           <section id="passengerPanel" role="tabpanel" aria-labelledby="passengerTab">
             <div class="section-title"><h2>Escolha uma viagem</h2><small>Valores estimados</small></div>
@@ -339,12 +345,13 @@
         });
       }
       addTiles();
-      state.startMarker=L.marker([state.origin.lat,state.origin.lon],{icon:leafIcon('you'),zIndexOffset:100}).addTo(state.map);
+      state.startMarker=L.marker([state.origin.lat,state.origin.lon],{icon:leafIcon('you'),zIndexOffset:100,draggable:true}).addTo(state.map);
+      state.startMarker.on('dragend',()=>{if(state.running)return;const p=state.startMarker.getLatLng();chooseOrigin({name:'Embarque ajustado no mapa',lat:p.lat,lon:p.lng},'manual');vaigoMessage('Ponto de embarque corrigido no mapa.');});
       state.map.on('click',evt=>{
         if(state.running) return;
         const {lat,lng}=evt.latlng;
-        const p={name:'Destino marcado no mapa',lat,lon:lng};
-        chooseDestination(p);
+        const p={name:state.pickupAdjust?'Embarque ajustado no mapa':'Destino marcado no mapa',lat,lon:lng};
+        if(state.pickupAdjust){state.pickupAdjust=false;$('vaigoPinToggle').style.background='#fafafa';chooseOrigin(p,'manual');vaigoMessage('Embarque ajustado; confira a rota.');}else chooseDestination(p);
         if(state.pickOnMap) { state.pickOnMap=false; $('mapPickButton').classList.remove('active'); }
       });
       const watcher = new ResizeObserver(()=>state.map?.invalidateSize());watcher.observe($('map'));
@@ -354,7 +361,7 @@
     function updateMarkers() {
       if(!state.map)return;
       state.startMarker.setLatLng([state.origin.lat,state.origin.lon]);
-      if(state.dest) {if(!state.destMarker)state.destMarker=L.marker([state.dest.lat,state.dest.lon],{icon:leafIcon('dest')}).addTo(state.map);else state.destMarker.setLatLng([state.dest.lat,state.dest.lon]);}
+      if(state.dest) {if(!state.destMarker){state.destMarker=L.marker([state.dest.lat,state.dest.lon],{icon:leafIcon('dest'),draggable:true}).addTo(state.map);state.destMarker.on('dragend',()=>{if(state.running)return;const p=state.destMarker.getLatLng();chooseDestination({name:'Destino ajustado no mapa',lat:p.lat,lon:p.lng,exactNumber:false});vaigoMessage('Destino corrigido manualmente; número da residência não verificado.');});}else state.destMarker.setLatLng([state.dest.lat,state.dest.lon]);}
       else if(state.destMarker){state.map.removeLayer(state.destMarker);state.destMarker=null;}
       if(state.routeLine){state.map.removeLayer(state.routeLine);state.routeLine=null;}
       if(state.dest) {const coords=state.route?.coords || [[state.origin.lat,state.origin.lon],[state.dest.lat,state.dest.lon]];state.routeLine=L.polyline(coords,{color:'#121212',weight:6,opacity:.90,lineCap:'round',lineJoin:'round',dashArray:state.route?'':'6,10'}).addTo(state.map);}
@@ -386,7 +393,7 @@
       $('destinationInput').value=p.name;
       hideSuggestions();
       getRoute();
-      toast('Destino selecionado. Calculando estimativa.');
+      toast('Destino selecionado. Calculando estimativa.');if(p.numberRequested&&!p.exactNumber)vaigoMessage('⚠️ Número residencial não confirmado na base cartográfica. Arraste o marcador até o local correto.');else vaigoMessage('Destino escolhido. Você pode arrastar os marcadores para refinar os pontos.');
     }
     function chooseOrigin(p,mode='manual'){
       if(state.running)return;
@@ -488,7 +495,43 @@
       $('suggestions').innerHTML=`<div class="small-info" style="padding:11px">${escapeHtml(message)}</div><button type="button" class="suggestion" id="manualSearchButton"><span class="suggestion-icon">⌕</span><span><strong>Pesquisar endereço completo</strong><span class="suggestion-hint">Ex.: Rua Maringá 1520, Francisco Beltrão, PR</span></span></button>`;
       $('manualSearchButton').addEventListener('click',()=>manualAddressSearch(field));
     }
-    function bindSearch(id,field){
+    
+// Ferramentas de localização e teste — dados locais, sem motoristas reais.
+state.favoritePlaces=[];
+try{const saved=JSON.parse(localStorage.getItem('vaigo_favorites_v1')||'[]');if(Array.isArray(saved))state.favoritePlaces=saved.filter(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lon)).slice(0,20)}catch(e){}
+state.pickupAdjust=false;state.demoDrivers=[];state.demoDriverTimer=null;
+function vaigoMessage(s){const el=$('vaigoToolsMsg');if(el)el.textContent=s;}
+function vaigoSavedFavorites(){try{localStorage.setItem('vaigo_favorites_v1',JSON.stringify(state.favoritePlaces))}catch(e){vaigoMessage('Não foi possível salvar neste navegador.');}}
+function vaigoShowFavorites(){
+ const field=state.searchField||'destination';
+ if(!state.favoritePlaces.length){vaigoMessage('Nenhum favorito salvo ainda. Escolha um destino e clique em Salvar destino.');return;}
+ renderAddressResults(state.favoritePlaces,field,'Favoritos deste dispositivo');
+ vaigoMessage('Selecione um favorito na lista de sugestões.');
+}
+$('vaigoFavSave')?.addEventListener('click',()=>{
+ const p=state.dest;if(!p){vaigoMessage('Escolha um destino para salvar.');return;}
+ const name=prompt('Nome do favorito (ex.: Casa, Trabalho)',p.name||'Meu destino');if(!name?.trim())return;
+ const f={name:name.trim().slice(0,80),hint:p.hint||p.name||'',lat:p.lat,lon:p.lon,type:p.type||'address',exactNumber:!!p.exactNumber};
+ state.favoritePlaces=[f,...state.favoritePlaces.filter(x=>Math.hypot(x.lat-f.lat,x.lon-f.lon)>0.00003)].slice(0,20);vaigoSavedFavorites();vaigoMessage('Favorito salvo apenas neste navegador.');
+});
+$('vaigoFavShow')?.addEventListener('click',vaigoShowFavorites);
+$('vaigoPinToggle')?.addEventListener('click',()=>{
+ state.pickupAdjust=!state.pickupAdjust;
+ $('vaigoPinToggle').style.background=state.pickupAdjust?'#d8f2e4':'#fafafa';
+ vaigoMessage(state.pickupAdjust?'Toque no mapa para ajustar o ponto de embarque. O marcador também pode ser arrastado.':'Ajuste do embarque desativado.');
+});
+function vaigoDemoDrivers(){
+ if(!state.map)return;
+ if(state.demoDriverTimer){clearInterval(state.demoDriverTimer);state.demoDriverTimer=null;for(const m of state.demoDrivers)state.map.removeLayer(m);state.demoDrivers=[];vaigoMessage('Motoristas de demonstração ocultados.');return;}
+ const p=state.origin;
+ const offsets=[[.004,.003],[-.003,.006],[.005,-.005]];
+ state.demoDrivers=offsets.map((d,i)=>L.marker([p.lat+d[0],p.lon+d[1]],{icon:L.divIcon({html:'<span style="display:grid;place-items:center;background:#fff;border:2px solid #11854f;border-radius:50%;width:35px;height:35px;font-size:18px">🚘</span>',className:'',iconSize:[35,35]})}).bindPopup('Motorista fictício '+(i+1)+' · Apenas demonstração').addTo(state.map));
+ state.demoDriverTimer=setInterval(()=>{state.demoDrivers.forEach((m,i)=>{const pos=m.getLatLng();m.setLatLng([pos.lat+Math.sin(Date.now()/4000+i)*0.00008,pos.lng+Math.cos(Date.now()/4000+i)*0.00008])})},3000);
+ vaigoMessage('3 carros fictícios se movendo para testes. Não representam motoristas conectados.');
+}
+$('vaigoDrivers')?.addEventListener('click',vaigoDemoDrivers);
+
+function bindSearch(id,field){
       const input=$(id);
       input.addEventListener('input',()=>{if(state.running)return;clearTimeout(state.debounce);const query=input.value;state.debounce=setTimeout(()=>searchAddress(query,field),500);});
       input.addEventListener('focus',()=>{state.searchField=field;if(input.value.length>=3 && !/Minha localização atual|São Paulo ·/.test(input.value))searchAddress(input.value,field);});
