@@ -442,7 +442,14 @@
       $('gpsLabel').textContent='Localizando...';
       state.gpsWatch=navigator.geolocation.watchPosition(pos=>{
         const {latitude:lat,longitude:lon,accuracy}=pos.coords;
-        if(!Number.isFinite(lat)||!Number.isFinite(lon))return;
+        if(!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180)return;
+        // Não substitua um embarque confiável por leituras antigas ou sem precisão.
+        const age=Date.now()-(pos.timestamp||Date.now());
+        if(age>20000||!Number.isFinite(accuracy)||accuracy>250){
+          $('gpsLabel').textContent='Aguardando GPS mais preciso'+(Number.isFinite(accuracy)?' · ±'+Math.round(accuracy)+' m':'');
+          return;
+        }
+        if(state.gps&&Number.isFinite(state.gpsAccuracy)&&accuracy>state.gpsAccuracy*3&&accuracy>80)return;
         const first=!state.gps;
         state.gps=true;state.userLocation={lat,lon};state.latestPositionAt=pos.timestamp||Date.now();state.gpsAccuracy=accuracy;
         $('gpsStatus').classList.add('live');$('gpsButton').classList.add('active');
