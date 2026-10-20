@@ -1,0 +1,11 @@
+import {strict as assert} from 'node:assert';
+import {canTransition,transitionRide} from './ride-state.mjs';
+const ride={riderId:'passageiro-1',driverId:null,status:'requested'};
+assert.equal(canTransition('requested','accepted'),true);
+assert.equal(canTransition('requested','completed'),false);
+assert.throws(()=>transitionRide(ride,'accepted',{id:'motorista',role:'driver',approved:false}));
+const accepted=transitionRide(ride,'accepted',{id:'motorista',role:'driver',approved:true});
+assert.equal(accepted.driverId,'motorista');
+assert.throws(()=>transitionRide(accepted,'completed',{id:'motorista',role:'driver'}));
+assert.equal(transitionRide(accepted,'arrived',{id:'motorista',role:'driver'}).status,'arrived');
+console.log('Testes do fluxo de corridas passaram.');
