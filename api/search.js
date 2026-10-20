@@ -20,6 +20,15 @@ for(const query of queries.slice(0,2)){
 try{const out=await get('https://nominatim.openstreetmap.org/search?'+new URLSearchParams({q:query,format:'jsonv2',addressdetails:'1',limit:'8',countrycodes:'br','accept-language':'pt-BR'}));for(const p of out){results.push({name:p.name||p.display_name.split(',').slice(0,2).join(','),hint:p.display_name,lat:Number(p.lat),lon:Number(p.lon),type:['highway','place'].includes(p.class)?'address':'place',exactNumber:!!house&&String(p.address?.house_number||'')===house,numberRequested:!!house});}if(out.length)break}catch(e){}
 }
 }
+// Tenta geocodificação estruturada para rua+número, distinguindo o resultado real do centro da rua.
+if(house){
+const street=q.replace(/(?:^|[\\s,])(\\d{1,6})(?=[\\s,]|$)/,' ').replace(/,?\\s*(Francisco Beltrão|PR|Paraná|Brasil).*$/i,'').replace(/[,\\s]+$/,'').trim();
+if(street.length>=3){try{
+const structured='https://nominatim.openstreetmap.org/search?'+new URLSearchParams({street:house+' '+street,city:'Francisco Beltrão',state:'Paraná',country:'Brasil',format:'jsonv2',limit:'5',addressdetails:'1',countrycodes:'br'});
+const found=await get(structured);
+for(const p of found){const addr=p.address||{};results.push({name:(addr.road||street)+(addr.house_number?', '+addr.house_number:''),hint:p.display_name,lat:Number(p.lat),lon:Number(p.lon),type:'address',exactNumber:String(addr.house_number||'')===house,numberRequested:true});}
+}catch(e){}}
+}
 // Para buscas por nome de local, a fonte Photon também devolve POIs com localização.
  // O ponto da residência só recebe confirmação se o provedor devolver explicitamente o mesmo número.
 const seen=new Set(),clean=results.filter(p=>{const key=p.lat.toFixed(4)+'|'+p.lon.toFixed(4)+'|'+p.name.toLowerCase();if(seen.has(key))return false;seen.add(key);return true}).map(p=>({...p,km:dist(lat,lon,p.lat,p.lon)})).sort((a,b)=>(b.exactNumber?1:0)-(a.exactNumber?1:0)||(a.km>30)-(b.km>30)||a.km-b.km).slice(0,15);
