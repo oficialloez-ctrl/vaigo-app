@@ -5,7 +5,7 @@ const dist=(a,b,c,d)=>{const r=Math.PI/180,x=(c-a)*r,y=(d-b)*r,q=Math.sin(x/2)**
 module.exports=async(req,res)=>{
 if(req.method!=='GET')return res.status(405).json({results:[]});
 const q=String(req.query.q||'').trim().slice(0,160),mode=String(req.query.mode||'suggest');
-const lat=Number(req.query.lat)||-26.08,lon=Number(req.query.lon)||-53.05;
+const rawLat=Number(req.query.lat),rawLon=Number(req.query.lon);const lat=Number.isFinite(rawLat)&&Math.abs(rawLat)<=90?rawLat:-26.08,lon=Number.isFinite(rawLon)&&Math.abs(rawLon)<=180?rawLon:-53.05;
 if(q.length<3)return res.status(400).json({results:[]});
 const key=[q,mode,lat.toFixed(2),lon.toFixed(2)].join('|'),previous=cache.get(key);
 if(previous&&Date.now()-previous.at<120000)return res.json({results:previous.data});
@@ -22,7 +22,7 @@ try{const out=await get('https://nominatim.openstreetmap.org/search?'+new URLSea
 }
 // Tenta geocodificação estruturada para rua+número, distinguindo o resultado real do centro da rua.
 if(house){
-const street=q.replace(/(?:^|[\\s,])(\\d{1,6})(?=[\\s,]|$)/,' ').replace(/,?\\s*(Francisco Beltrão|PR|Paraná|Brasil).*$/i,'').replace(/[,\\s]+$/,'').trim();
+const street=q.replace(/\b\d{1,6}\b/g,' ').replace(/,?\s*(Francisco Beltrão|PR|Paraná|Brasil).*$/i,'').replace(/[,\s]+$/,'').trim();
 if(street.length>=3){try{
 const structured='https://nominatim.openstreetmap.org/search?'+new URLSearchParams({street:house+' '+street,city:'Francisco Beltrão',state:'Paraná',country:'Brasil',format:'jsonv2',limit:'5',addressdetails:'1',countrycodes:'br'});
 const found=await get(structured);
