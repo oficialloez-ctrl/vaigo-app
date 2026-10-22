@@ -180,6 +180,14 @@ html[data-theme="dark"] .theme-switch{background:#2d3930}
 html[data-theme="dark"] .theme-switch button{color:#cbd9cd}
 html[data-theme="dark"] .theme-switch button[aria-pressed="true"]{background:#496b4f;color:white}
 @media(max-width:480px){.demo-chip{display:none}.theme-switch button{font-size:11px;padding:6px}}
+
+/* Barra de ferramentas: respeita o tema, inclusive estilos inline dos botões */
+html[data-theme="dark"] #vaigoTools {border-bottom-color:#36423a!important}
+html[data-theme="dark"] #vaigoTools button {background:#263229!important;border:1px solid #465649!important;color:#eaf5ec!important;transition:background .15s,border-color .15s}
+html[data-theme="dark"] #vaigoTools button:hover {background:#344739!important;border-color:#6ddc7e!important}
+html[data-theme="dark"] #vaigoTools #vaigoUseGPS,
+html[data-theme="dark"] #vaigoTools #vaigoConfirmHouse {background:#203b29!important;border-color:#418a53!important;color:#a9ffb7!important}
+html[data-theme="dark"] #vaigoTools #vaigoToolsMsg {color:#b7c9ba!important}
   </style>
 </head>
 <body>
