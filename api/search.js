@@ -1,23 +1,24 @@
 const https=require('https');
 const cache=new Map();
 const get=url=>new Promise((resolve,reject)=>{const req=https.get(url,{headers:{'User-Agent':'VaiGoDemo/1.1 (prototype)','Accept':'application/json'}},res=>{let s='';res.on('data',x=>{s+=x;if(s.length>400000)req.destroy()});res.on('end',()=>{if(res.statusCode!==200)return reject(Error('HTTP '+res.statusCode));try{resolve(JSON.parse(s))}catch(e){reject(e)}})});req.setTimeout(8000,()=>req.destroy(Error('Timeout')));req.on('error',reject)});
+const normalize=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
 const dist=(a,b,c,d)=>{const r=Math.PI/180,x=(c-a)*r,y=(d-b)*r,q=Math.sin(x/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin(y/2)**2;return 12742*Math.asin(Math.min(1,Math.sqrt(q)))};
 module.exports=async(req,res)=>{
 if(req.method!=='GET')return res.status(405).json({results:[]});
 const q=String(req.query.q||'').trim().slice(0,160),mode=String(req.query.mode||'suggest');
 const rawLat=Number(req.query.lat),rawLon=Number(req.query.lon);const hasCoords=req.query.lat!==undefined&&req.query.lon!==undefined&&Number.isFinite(rawLat)&&Number.isFinite(rawLon)&&Math.abs(rawLat)<=90&&Math.abs(rawLon)<=180;const lat=hasCoords?rawLat:-26.08,lon=hasCoords?rawLon:-53.05;
 if(q.length<3)return res.status(400).json({results:[]});
-const key=[q,mode,lat.toFixed(2),lon.toFixed(2)].join('|'),previous=cache.get(key);
+const key=[normalize(q),mode,lat.toFixed(2),lon.toFixed(2)].join('|'),previous=cache.get(key);
 if(previous&&Date.now()-previous.at<120000)return res.json({results:previous.data});
 const results=[];const house=(q.match(/(?:^|[\s,])(\d{1,6})(?:[\s,]|$)/)||[])[1]||null;
 try{
-const ph=await get('https://photon.komoot.io/api/?'+new URLSearchParams({q,limit:'12',lat:String(lat),lon:String(lon)}));
+const ph=await get('https://photon.komoot.io/api/?'+new URLSearchParams({q,limit:'20',lat:String(lat),lon:String(lon)}));
 for(const f of ph.features||[]){const p=f.properties||{},c=f.geometry?.coordinates||[];if(c.length!==2||!Number.isFinite(Number(c[0]))||!Number.isFinite(Number(c[1]))||Math.abs(Number(c[0]))>180||Math.abs(Number(c[1]))>90)continue;results.push({name:p.housenumber&&p.street?p.street+', '+p.housenumber:p.name||p.street||'Local',hint:[p.street,p.city||p.county,p.state].filter(Boolean).join(', '),lat:c[1],lon:c[0],type:['shop','amenity','tourism','office'].includes(p.osm_key)?'place':'address',exactNumber:!!house&&String(p.housenumber||'')===house&&!!p.street,numberRequested:!!house});}
 }catch(e){}
 if(mode==='address'||results.length<7||house){
-const queries=[q];
+const queries=[q];const normalized=normalize(q);if(normalized!==q.toLowerCase())queries.push(normalized);
 for(const query of queries){
-try{const out=await get('https://nominatim.openstreetmap.org/search?'+new URLSearchParams({q:query,format:'jsonv2',addressdetails:'1',limit:'8',countrycodes:'br','accept-language':'pt-BR'}));for(const p of out){if(!Number.isFinite(Number(p.lat))||!Number.isFinite(Number(p.lon))||Math.abs(Number(p.lat))>90||Math.abs(Number(p.lon))>180)continue;results.push({name:p.name||p.display_name.split(',').slice(0,2).join(','),hint:p.display_name,lat:Number(p.lat),lon:Number(p.lon),type:['highway','place'].includes(p.class)?'address':'place',exactNumber:!!house&&String(p.address?.house_number||'')===house,numberRequested:!!house});}if(out.length)break}catch(e){}
+try{const out=await get('https://nominatim.openstreetmap.org/search?'+new URLSearchParams({q:query,format:'jsonv2',addressdetails:'1',limit:'8',countrycodes:'br','accept-language':'pt-BR',viewbox:[lon-0.5,lat+0.5,lon+0.5,lat-0.5].join(','),bounded:'0'}));for(const p of out){if(!Number.isFinite(Number(p.lat))||!Number.isFinite(Number(p.lon))||Math.abs(Number(p.lat))>90||Math.abs(Number(p.lon))>180)continue;results.push({name:p.name||p.display_name.split(',').slice(0,2).join(','),hint:p.display_name,lat:Number(p.lat),lon:Number(p.lon),type:['highway','place'].includes(p.class)?'address':'place',exactNumber:!!house&&String(p.address?.house_number||'')===house,numberRequested:!!house});}if(out.length)break}catch(e){}
 }
 }
 // Tenta geocodificação estruturada para rua+número, distinguindo o resultado real do centro da rua.
