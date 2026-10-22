@@ -695,6 +695,30 @@ $('findAddressButton').addEventListener('click',()=>manualAddressSearch('destina
     $('requestButton').addEventListener('click',toggleRide);
     $('driverAction').addEventListener('click',driverAction);
     bindSearch('originInput','origin');bindSearch('destinationInput','destination');
+    document.querySelectorAll('[data-clear]').forEach(button=>button.addEventListener('click',()=>{
+      if(state.running){toast('Finalize a corrida simulada antes de limpar o endereço.');return;}
+      clearTimeout(state.debounce);
+      ++state.searchSeq;
+      if(state.abort){state.abort.abort();state.abort=null;}
+      hideSuggestions();
+      const field=button.dataset.clear;
+      if(field==='destination'){
+        $('destinationInput').value='';state.dest=null;state.pickOnMap=false;
+        $('mapPickButton').classList.remove('active');
+        getRoute();
+        vaigoMessage('Destino removido. Digite outro endereço ou selecione no mapa.');
+        $('destinationInput').focus();
+      }else if(field==='origin'){
+        $('originInput').value='';
+        pauseGPS('GPS pausado');
+        state.pickupMode='manual';
+        // Mantém coordenadas internas até um novo embarque ser escolhido.
+        // O campo fica realmente vazio, sem reintroduzir a localização anterior.
+        vaigoMessage('Origem limpa. Digite outro endereço ou use o GPS.');
+        $('originInput').focus();
+      }
+    }));
+
     for(const id of Object.keys(DEFAULT))$(id).addEventListener('input',updateConfig);
     for(const id of ['manualKm','manualMin'])$(id).addEventListener('input',manualEdited);
     $('resetSettings').addEventListener('click',()=>{for(const [id,val] of Object.entries(DEFAULT))$(id).value=val;updateConfig();toast('Parâmetros restaurados.');});
