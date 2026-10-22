@@ -37,7 +37,9 @@
     .address-search { height:49px; flex:1; display:flex; align-items:center; background:#f4f4f4; border-radius:9px; min-width:0; border:1px solid transparent; transition:border .15s; }
     .address-search:focus-within { background:#fff; border:1px solid #aaa; }
     .address-search input { border:0; background:transparent; outline:0; min-width:0; flex:1; padding:0 13px; font-size:14px; color:#171717; height:100%; font-weight:500; text-overflow:ellipsis; }
-    .address-search input::placeholder { color:#8d8d8d; }
+    .address-clear {border:0;background:transparent;color:#666;cursor:pointer;font-size:22px;line-height:1;padding:5px 12px;flex:none;}
+     .address-clear:hover {color:#111;}
+     .address-search input::placeholder { color:#8d8d8d; }
     .mini-button { width:44px; height:45px; flex:0 0 44px; border:none; border-radius:9px; background:#f3f3f3; display:grid; place-items:center; color:#111; }
     .mini-button:hover { background:#e5e5e5; }
     .mini-button.active { background:#e3f3e9; color:#147b43; }
@@ -183,10 +185,10 @@
           <div class="inputs">
             <span class="route-rail"></span>
             <div class="address-row">
-              <div class="address-search"><input id="originInput" autocomplete="off" type="text" aria-label="Origem" value="Ative o GPS para localizar" placeholder="De onde você sai?" /></div>
+              <div class="address-search"><input id="originInput" autocomplete="off" type="text" aria-label="Origem" value="Ative o GPS para localizar" placeholder="De onde você sai?" /><button type="button" class="address-clear" data-clear="origin" aria-label="Limpar origem">×</button></div>
               <button class="mini-button" id="gpsButton" title="Ativar ou pausar GPS em tempo real" aria-label="Ativar ou pausar GPS em tempo real" aria-pressed="false"><svg class="ui-icon"><use href="#ico-locate"/></svg></button>
             </div>
-            <div class="address-row"><div class="address-search"><input id="destinationInput" autocomplete="off" aria-label="Destino" type="text" placeholder="Para onde?" /></div><button class="mini-button" id="mapPickButton" title="Selecionar destino no mapa" aria-label="Selecionar destino no mapa"><svg class="ui-icon"><use href="#ico-pin"/></svg></button></div>
+            <div class="address-row"><div class="address-search"><input id="destinationInput" autocomplete="off" aria-label="Destino" type="text" placeholder="Para onde?" /><button type="button" class="address-clear" data-clear="destination" aria-label="Limpar destino">×</button></div><button class="mini-button" id="mapPickButton" title="Selecionar destino no mapa" aria-label="Selecionar destino no mapa"><svg class="ui-icon"><use href="#ico-pin"/></svg></button></div>
           </div>
           <div class="suggestions" id="suggestions" hidden role="listbox" aria-label="Sugestões de endereços"></div><button type="button" id="findAddressButton" style="margin:8px 0 0 19px;border:0;border-radius:8px;background:#171717;color:#fff;font-weight:700;font-size:12px;padding:11px 13px;cursor:pointer">Pesquisar destino</button>
           <div class="live-row"><span class="status" id="gpsStatus"><span class="status-dot"></span><span id="gpsLabel">GPS não ativado</span></span><button class="linkish" id="resetRouteButton">Limpar rota</button></div>
