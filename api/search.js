@@ -1,6 +1,6 @@
 const https=require('https');
 const cache=new Map();
-const get=url=>new Promise((resolve,reject)=>{const req=https.get(url,{headers:{'User-Agent':'VaiGoDemo/1.1 (prototype)','Accept':'application/json'}},res=>{let s='';res.on('data',x=>{s+=x;if(s.length>400000)req.destroy()});res.on('end',()=>{if(res.statusCode!==200)return reject(Error('HTTP '+res.statusCode));try{resolve(JSON.parse(s))}catch(e){reject(e)}})});req.setTimeout(8000,()=>req.destroy(Error('Timeout')));req.on('error',reject)});
+const get=url=>new Promise((resolve,reject)=>{const req=https.get(url,{headers:{'User-Agent':'ZECA/1.2 (address prototype)','Accept':'application/json'}},res=>{let s='';res.on('data',x=>{s+=x;if(s.length>400000)req.destroy()});res.on('end',()=>{if(res.statusCode!==200)return reject(Error('HTTP '+res.statusCode));try{resolve(JSON.parse(s))}catch(e){reject(e)}})});req.setTimeout(8000,()=>req.destroy(Error('Timeout')));req.on('error',reject)});
 const normalize=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
 const dist=(a,b,c,d)=>{const r=Math.PI/180,x=(c-a)*r,y=(d-b)*r,q=Math.sin(x/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin(y/2)**2;return 12742*Math.asin(Math.min(1,Math.sqrt(q)))};
 module.exports=async(req,res)=>{
@@ -11,7 +11,7 @@ if(q.length<3)return res.status(400).json({results:[]});
 const key=[normalize(q),mode,lat.toFixed(3),lon.toFixed(3)].join('|'),previous=cache.get(key);
 if(previous&&Date.now()-previous.at<120000)return res.json({results:previous.data});
 const results=[];const house=(q.match(/(?:^|[\s,])(\d{1,6})(?:[\s,]|$)/)||[])[1]||null;
-const streetQuery=normalize(q.replace(/\b\d{1,6}\b/g,' ').replace(/\b(rua|r|avenida|av|travessa|tv)\b/g,' ').replace(/[^\p{L}\p{N} ]/gu,' ')).replace(/\s+/g,' ').trim();
+const streetPart=q.split(',')[0].replace(/\b\d{1,6}\b/g,' ');\nconst streetQuery=normalize(streetPart.replace(/\b(rua|r|avenida|av|travessa|tv)\b/gi,' ').replace(/[^\p{L}\p{N} ]/gu,' ')).replace(/\s+/g,' ').trim();
 const streetTokens=streetQuery.split(' ').filter(t=>t.length>1);
 const streetOnly=q.replace(/(?:^|[\s,])\d{1,6}(?=[\s,]|$)/g,' ').replace(/\s+/g,' ').trim();
 const addPhoton=(data)=>{for(const f of data.features||[]){const p=f.properties||{},c=f.geometry?.coordinates||[];if(c.length!==2||!Number.isFinite(Number(c[0]))||!Number.isFinite(Number(c[1])))continue;const number=String(p.housenumber||'').trim();results.push({name:number&&p.street?p.street+', '+number:p.name||p.street||'Local',hint:[p.street,p.city||p.county,p.state].filter(Boolean).join(', '),lat:Number(c[1]),lon:Number(c[0]),type:['shop','amenity','tourism','office'].includes(p.osm_key)?'place':'address',houseNumber:number||null,exactNumber:!!house&&number===house&&!!p.street,numberRequested:!!house});}};
@@ -19,7 +19,7 @@ try{addPhoton(await get('https://photon.komoot.io/api/?'+new URLSearchParams({q,
 if(house&&streetOnly.length>=3){try{addPhoton(await get('https://photon.komoot.io/api/?'+new URLSearchParams({q:streetOnly,limit:'30',lat:String(lat),lon:String(lon)})));}catch(e){}}
 
 if(mode==='address'||results.length<7||house){
-const queries=[q];const normalized=normalize(q);if(normalized!==q.toLowerCase())queries.push(normalized);
+const queries=[q];if(house){queries.push(q.replace(/\b(rua|avenida|travessa)\s+/i,'').replace(/\b(\d{1,6})\b/,'$1').trim());}const normalized=normalize(q);if(normalized!==q.toLowerCase())queries.push(normalized);
 for(const query of queries){
 try{const out=await get('https://nominatim.openstreetmap.org/search?'+new URLSearchParams({q:query,format:'jsonv2',addressdetails:'1',limit:'8',countrycodes:'br','accept-language':'pt-BR',viewbox:[lon-0.5,lat+0.5,lon+0.5,lat-0.5].join(','),bounded:'0'}));for(const p of out){if(!Number.isFinite(Number(p.lat))||!Number.isFinite(Number(p.lon))||Math.abs(Number(p.lat))>90||Math.abs(Number(p.lon))>180)continue;results.push({name:p.name||p.display_name.split(',').slice(0,2).join(','),hint:p.display_name,lat:Number(p.lat),lon:Number(p.lon),type:['highway','place'].includes(p.class)?'address':'place',houseNumber:p.address?.house_number||null,exactNumber:!!house&&String(p.address?.house_number||'')===house,numberRequested:!!house});}if(out.length)break}catch(e){}
 }
