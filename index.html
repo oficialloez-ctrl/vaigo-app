@@ -164,7 +164,17 @@
       .map-control { width:43px; height:43px; }
     }
     @media(max-width:430px) { .quick-dest button:nth-child(3) { display:none; } .v-sub { font-size:10px; } .panel-body { max-height:54dvh; } .floating-map-ctrls { bottom:calc(54dvh + 30px); } }
-    @media(prefers-reduced-motion:reduce) { * { scroll-behavior:auto!important; transition:none!important; animation:none!important; } }
+    .mobile-collapse-btn{display:none}
+     @media(max-width:810px){
+       .mobile-collapse-btn{display:block;width:100%;padding:10px;border:1px solid #dcdfe2;border-radius:10px;background:#f7f8f9;color:#23272b;font-size:12px;font-weight:750;margin-bottom:8px}
+       .panel-top.is-collapsed > :not(.mobile-collapse-btn){display:none!important}
+       .panel-top.is-collapsed{max-height:65px;overflow:visible}
+       .panel-body.is-collapsed{max-height:60px!important;overflow:hidden!important;padding:9px 15px!important}
+       .panel-body.is-collapsed > :not(.mobile-collapse-btn){display:none!important}
+       .floating-map-ctrls{bottom:90px!important}
+     }
+     html[data-theme="dark"] .mobile-collapse-btn{background:#28332e;color:#f3f6f4;border-color:#43514a}
+     @media(prefers-reduced-motion:reduce) { * { scroll-behavior:auto!important; transition:none!important; animation:none!important; } }
 
 .theme-switch{display:flex;gap:3px;padding:3px;border-radius:9px;background:#eee}
 .theme-switch button{border:0;background:transparent;padding:7px;border-radius:6px;font-size:12px;cursor:pointer}
@@ -203,7 +213,7 @@ html[data-theme="dark"] #vaigoTools #vaigoToolsMsg {color:#b7c9ba!important}
   <div class="app">
     <aside class="sidebar" aria-label="Planejamento da corrida">
       <div class="sidebar-inner">
-        <div class="panel-top">
+        <div class="panel-top"><button type="button" id="topPanelToggle" class="mobile-collapse-btn" aria-expanded="true">▴ Recolher busca e ver mapa</button>
           <div class="brand-row"><div class="brand" aria-label="ZECA"><img src="/assets/zeca-icon.svg" alt="" style="width:37px;height:37px;border-radius:9px;margin-right:3px">ZECA</div><div style="display:flex;align-items:center;gap:9px"><div class="theme-switch" role="group" aria-label="Tema"><button type="button" id="lightTheme" aria-pressed="true">☀ Claro</button><button type="button" id="darkTheme" aria-pressed="false">☾ Escuro</button></div><span class="demo-chip">SIMULAÇÃO V9</span><button type="button" class="profile-dot" id="settingsShortcut" aria-label="Abrir administração de teste"><svg class="ui-icon"><use href="#ico-settings"/></svg></button></div></div>
           <h1>Para onde vamos?</h1>
           <p class="description">Sua próxima viagem começa aqui. Calcule o preço antes de sair.</p>
@@ -231,7 +241,7 @@ html[data-theme="dark"] #vaigoTools #vaigoToolsMsg {color:#b7c9ba!important}
 <button type="button" id="vaigoConfirmHouse" style="padding:9px;border-radius:8px;border:1px solid #b5d6bb;background:#ecf7ee">✓ Confirmar entrada da residência</button>
 <button type="button" id="vaigoDrivers" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">🚘 Motoristas de teste</button>
 <div id="vaigoToolsMsg" aria-live="polite" style="flex-basis:100%;font-size:11px;color:#666">Números não confirmados devem ser conferidos no mapa. Motoristas são simulados.</div></div>
-<div class="panel-body">
+<div class="panel-body is-collapsed"><button type="button" id="bottomPanelToggle" class="mobile-collapse-btn" aria-expanded="false">▾ Ver opções de corrida e ferramentas</button>
           <div class="tab-bar" role="tablist" aria-label="Painéis"><button id="passengerTab" role="tab" aria-selected="true" class="active">Passageiro</button><button id="financeTab" role="tab" aria-selected="false">Motorista</button><button id="adminTab" role="tab" aria-selected="false">ADM</button></div>
           <section id="passengerPanel" role="tabpanel" aria-labelledby="passengerTab">
             <div class="section-title"><h2>Escolha uma viagem</h2><small>Valores estimados</small></div>
@@ -375,7 +385,8 @@ html[data-theme="dark"] #vaigoTools #vaigoToolsMsg {color:#b7c9ba!important}
       // Basemap for prototype testing: Esri street map. No secret is embedded.
       // If unavailable, try the humanitarian OSM layer as a fallback.
       const providers=[
-        {url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',options:{maxZoom:19,attribution:'Tiles &copy; Esri, HERE, Garmin, USGS and contributors'}},
+        {url:'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',options:{subdomains:'abcd',maxZoom:19,attribution:'&copy; OpenStreetMap contributors &copy; CARTO'}},
+         {url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',options:{maxZoom:19,attribution:'Tiles &copy; Esri, HERE, Garmin, USGS and contributors'}},
         {url:'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',options:{subdomains:'abc',maxZoom:19,attribution:'&copy; OpenStreetMap contributors, tiles by HOT'}}
       ];
       let providerIndex=0, failedTiles=0, loadedTiles=0, switching=false;
@@ -732,7 +743,18 @@ $('findAddressButton').addEventListener('click',()=>manualAddressSearch('destina
     $('resetSettings').addEventListener('click',()=>{for(const [id,val] of Object.entries(DEFAULT))$(id).value=val;updateConfig();toast('Parâmetros restaurados.');});
     document.addEventListener('pointerdown',e=>{if(!$('suggestions').contains(e.target)&&!e.target.matches('#originInput,#destinationInput'))hideSuggestions();});
     if(window.L)initMap();else window.addEventListener('load',()=>{if(window.L)initMap();else $('mapFallback').style.display='flex';});
-    // Keep additional tools inside the scrollable lower panel on small screens.
+    const topPanel=document.querySelector('.panel-top'),bottomPanel=document.querySelector('.panel-body');
+     const topToggle=document.getElementById('topPanelToggle'),bottomToggle=document.getElementById('bottomPanelToggle');
+     function toggleMobilePanel(panel,button){
+       const collapsed=panel.classList.toggle('is-collapsed');
+       button.setAttribute('aria-expanded',String(!collapsed));
+       button.textContent=panel===topPanel?(collapsed?'▾ Mostrar pesquisa de endereços':'▴ Recolher busca e ver mapa'):(collapsed?'▾ Ver opções de corrida e ferramentas':'▴ Recolher opções e ver mapa');
+       if(state.map)setTimeout(()=>state.map.invalidateSize(),100);
+     }
+     topToggle.addEventListener('click',()=>toggleMobilePanel(topPanel,topToggle));
+     bottomToggle.addEventListener('click',()=>toggleMobilePanel(bottomPanel,bottomToggle));
+     if(window.innerWidth>810)bottomPanel.classList.remove('is-collapsed');
+     // Keep additional tools inside the scrollable lower panel on small screens.
     // Previously the toolbar remained in a full-screen pointer-events:none
     // sidebar layer, where it could visually overlap search and block touches.
     const mobileLayout = window.matchMedia('(max-width:810px)');
