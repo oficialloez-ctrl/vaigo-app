@@ -1,41 +1,39 @@
 const https=require('https');
 const cache=new Map();
-const get=url=>new Promise((resolve,reject)=>{const req=https.get(url,{headers:{'User-Agent':'ZECA/1.2 (address prototype)','Accept':'application/json'}},res=>{let s='';res.on('data',x=>{s+=x;if(s.length>400000)req.destroy()});res.on('end',()=>{if(res.statusCode!==200)return reject(Error('HTTP '+res.statusCode));try{resolve(JSON.parse(s))}catch(e){reject(e)}})});req.setTimeout(8000,()=>req.destroy(Error('Timeout')));req.on('error',reject)});
-const normalize=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-const dist=(a,b,c,d)=>{const r=Math.PI/180,x=(c-a)*r,y=(d-b)*r,q=Math.sin(x/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin(y/2)**2;return 12742*Math.asin(Math.min(1,Math.sqrt(q)))};
+const norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+const distance=(a,b,c,d)=>{const r=Math.PI/180,x=(c-a)*r,y=(d-b)*r,q=Math.sin(x/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin(y/2)**2;return 12742*Math.asin(Math.min(1,Math.sqrt(q)))};
+const get=url=>new Promise((resolve,reject)=>{const req=https.get(url,{headers:{'User-Agent':'ZECA-Prototype/1.3 (non-commercial testing)','Accept':'application/json'}},res=>{let body='';res.on('data',x=>{body+=x;if(body.length>350000)req.destroy()});res.on('end',()=>{if(res.statusCode!==200)return reject(Error('HTTP '+res.statusCode));try{resolve(JSON.parse(body))}catch(e){reject(e)}})});req.setTimeout(4200,()=>req.destroy(Error('Timeout')));req.on('error',reject)});
 module.exports=async(req,res)=>{
-if(req.method!=='GET')return res.status(405).json({results:[]});
-const q=String(req.query.q||'').trim().slice(0,160),mode=String(req.query.mode||'suggest');
-const rawLat=Number(req.query.lat),rawLon=Number(req.query.lon);const hasCoords=req.query.lat!==undefined&&req.query.lon!==undefined&&Number.isFinite(rawLat)&&Number.isFinite(rawLon)&&Math.abs(rawLat)<=90&&Math.abs(rawLon)<=180;const lat=hasCoords?rawLat:-26.08,lon=hasCoords?rawLon:-53.05;
-if(q.length<3)return res.status(400).json({results:[]});
-const key=[normalize(q),mode,lat.toFixed(3),lon.toFixed(3)].join('|'),previous=cache.get(key);
-if(previous&&Date.now()-previous.at<120000)return res.json({results:previous.data});
-const results=[];const house=(q.match(/(?:^|[\s,])(\d{1,6})(?:[\s,]|$)/)||[])[1]||null;
-const streetPart=q.split(',')[0].replace(/\b\d{1,6}\b/g,' ');\nconst streetQuery=normalize(streetPart.replace(/\b(rua|r|avenida|av|travessa|tv)\b/gi,' ').replace(/[^\p{L}\p{N} ]/gu,' ')).replace(/\s+/g,' ').trim();
-const streetTokens=streetQuery.split(' ').filter(t=>t.length>1);
-const streetOnly=q.replace(/(?:^|[\s,])\d{1,6}(?=[\s,]|$)/g,' ').replace(/\s+/g,' ').trim();
-const addPhoton=(data)=>{for(const f of data.features||[]){const p=f.properties||{},c=f.geometry?.coordinates||[];if(c.length!==2||!Number.isFinite(Number(c[0]))||!Number.isFinite(Number(c[1])))continue;const number=String(p.housenumber||'').trim();results.push({name:number&&p.street?p.street+', '+number:p.name||p.street||'Local',hint:[p.street,p.city||p.county,p.state].filter(Boolean).join(', '),lat:Number(c[1]),lon:Number(c[0]),type:['shop','amenity','tourism','office'].includes(p.osm_key)?'place':'address',houseNumber:number||null,exactNumber:!!house&&number===house&&!!p.street,numberRequested:!!house});}};
-try{addPhoton(await get('https://photon.komoot.io/api/?'+new URLSearchParams({q,limit:'20',lat:String(lat),lon:String(lon)})));}catch(e){}
-if(house&&streetOnly.length>=3){try{addPhoton(await get('https://photon.komoot.io/api/?'+new URLSearchParams({q:streetOnly,limit:'30',lat:String(lat),lon:String(lon)})));}catch(e){}}
-
-if(mode==='address'||results.length<7||house){
-const queries=[q];if(house){queries.push(q.replace(/\b(rua|avenida|travessa)\s+/i,'').replace(/\b(\d{1,6})\b/,'$1').trim());}const normalized=normalize(q);if(normalized!==q.toLowerCase())queries.push(normalized);
-for(const query of queries){
-try{const out=await get('https://nominatim.openstreetmap.org/search?'+new URLSearchParams({q:query,format:'jsonv2',addressdetails:'1',limit:'8',countrycodes:'br','accept-language':'pt-BR',viewbox:[lon-0.5,lat+0.5,lon+0.5,lat-0.5].join(','),bounded:'0'}));for(const p of out){if(!Number.isFinite(Number(p.lat))||!Number.isFinite(Number(p.lon))||Math.abs(Number(p.lat))>90||Math.abs(Number(p.lon))>180)continue;results.push({name:p.name||p.display_name.split(',').slice(0,2).join(','),hint:p.display_name,lat:Number(p.lat),lon:Number(p.lon),type:['highway','place'].includes(p.class)?'address':'place',houseNumber:p.address?.house_number||null,exactNumber:!!house&&String(p.address?.house_number||'')===house,numberRequested:!!house});}if(out.length)break}catch(e){}
-}
-}
-// Tenta geocodificação estruturada para rua+número, distinguindo o resultado real do centro da rua.
-if(house){
-const street=q.replace(/\b\d{1,6}\b/g,' ').replace(/[,\s]+$/,'').trim();
-if(street.length>=3&&hasCoords){try{
-const structured='https://nominatim.openstreetmap.org/search?'+new URLSearchParams({q:house+' '+street,format:'jsonv2',limit:'5',addressdetails:'1',countrycodes:'br',viewbox:[lon-0.35,lat+0.35,lon+0.35,lat-0.35].join(','),bounded:'0'});
-const found=await get(structured);
-for(const p of found){if(!Number.isFinite(Number(p.lat))||!Number.isFinite(Number(p.lon))||Math.abs(Number(p.lat))>90||Math.abs(Number(p.lon))>180)continue;const addr=p.address||{};results.push({name:(addr.road||street)+(addr.house_number?', '+addr.house_number:''),hint:p.display_name,lat:Number(p.lat),lon:Number(p.lon),type:'address',houseNumber:addr.house_number||null,exactNumber:String(addr.house_number||'')===house,numberRequested:true});}
-}catch(e){}}
-}
-// Para buscas por nome de local, a fonte Photon também devolve POIs com localização.
- // O ponto da residência só recebe confirmação se o provedor devolver explicitamente o mesmo número.
-const score=p=>{const name=normalize((p.name||'')+' '+(p.hint||'')).replace(/[^\p{L}\p{N} ]/gu,' ');const hits=streetTokens.filter(t=>name.split(/\s+/).includes(t)).length;const match=streetTokens.length?hits/streetTokens.length:1;const km=dist(lat,lon,p.lat,p.lon);const exact=!!p.exactNumber&&match>=0.8;const nearbyNumber=house&&p.houseNumber&&Number.isFinite(Number(p.houseNumber))?Math.abs(Number(p.houseNumber)-Number(house)):null;return {match,km,exact,rank:match*100+(exact?60:0)+(nearbyNumber!==null?Math.max(0,25-nearbyNumber/15):0)-Math.min(km,1000)*0.8};};
-const seen=new Set(),clean=results.map(p=>{const sc=score(p);return {...p,exactNumber:sc.exact,km:sc.km,_rank:sc.rank,_match:sc.match};}).filter(p=>p._match>=0.6&&(!hasCoords||p.km<=80)).filter(p=>{const k=p.lat.toFixed(4)+'|'+p.lon.toFixed(4)+'|'+normalize(p.name);if(seen.has(k))return false;seen.add(k);return true;}).sort((a,b)=>b._rank-a._rank).slice(0,15).map(({_rank,_match,...p})=>p);
-cache.set(key,{at:Date.now(),data:clean});return res.status(200).json({results:clean});
+ if(req.method!=='GET')return res.status(405).json({results:[]});
+ const q=String(req.query.q||'').trim().slice(0,160),mode=String(req.query.mode||'suggest');
+ if(q.length<3)return res.status(400).json({results:[]});
+ const a=Number(req.query.lat),b=Number(req.query.lon),hasCoords=req.query.lat!==undefined&&req.query.lon!==undefined&&Number.isFinite(a)&&Number.isFinite(b)&&Math.abs(a)<=90&&Math.abs(b)<=180;
+ const lat=hasCoords?a:-26.08,lon=hasCoords?b:-53.05;
+ const key=[norm(q),mode,lat.toFixed(3),lon.toFixed(3)].join('|');
+ const old=cache.get(key);if(old&&Date.now()-old.at<120000)return res.json(old.data);
+ const parts=q.split(',').map(x=>x.trim()).filter(Boolean);
+ const first=parts[0]||q;
+ const house=(first.match(/(?:^|\s)(\d{1,6})(?=\s|$)/)||[])[1]||null;
+ const street=first.replace(/\b\d{1,6}\b/g,' ').replace(/\s+/g,' ').trim();
+ const streetTerms=norm(street).replace(/\b(rua|r|avenida|av|travessa|tv)\b/g,' ').split(/[^\p{L}\p{N}]+/u).filter(x=>x.length>1);
+ const city=parts.slice(1).filter(x=>!/^\d{5}-?\d{3}$/.test(x)).join(', ');
+ const candidates=[q];
+ if(house&&street.length>2)candidates.push([street,city].filter(Boolean).join(', '));
+ if(!house&&parts.length>1)candidates.push(first);
+ if(house&&street.length>2)candidates.push(street);
+ const queries=[...new Set(candidates)].slice(0,3);
+ const tasks=queries.map(query=>get('https://photon.komoot.io/api/?'+new URLSearchParams({q:query,limit:'20',lat:String(lat),lon:String(lon)})).then(data=>({kind:'photon',data})));
+ // Uma única consulta ao Nominatim por busca evita sequências longas e respeita melhor o serviço público.
+ if(mode==='address'||house||q.length>8)tasks.push(get('https://nominatim.openstreetmap.org/search?'+new URLSearchParams({q:house?[street,city].filter(Boolean).join(', '):q,format:'jsonv2',addressdetails:'1',limit:'10',countrycodes:'br','accept-language':'pt-BR',viewbox:[lon-0.45,lat+0.45,lon+0.45,lat-0.45].join(','),bounded:'0'})).then(data=>({kind:'nominatim',data})));
+ const settled=await Promise.allSettled(tasks);
+ const found=[];
+ for(const item of settled){if(item.status!=='fulfilled')continue;const {kind,data}=item.value;
+  if(kind==='photon')for(const feature of data.features||[]){const p=feature.properties||{},c=feature.geometry?.coordinates||[];if(!Number.isFinite(+c[0])||!Number.isFinite(+c[1]))continue;const number=String(p.housenumber||'').trim();found.push({name:number&&p.street?p.street+', '+number:p.name||p.street||'Local',hint:[p.street,p.city||p.county,p.state].filter(Boolean).join(', '),lat:+c[1],lon:+c[0],type:['shop','amenity','tourism','office'].includes(p.osm_key)?'place':'address',houseNumber:number||null,numberRequested:!!house});}
+  if(kind==='nominatim')for(const p of data||[]){if(!Number.isFinite(+p.lat)||!Number.isFinite(+p.lon))continue;const number=String(p.address?.house_number||'').trim();found.push({name:number&&p.address?.road?p.address.road+', '+number:p.name||p.display_name?.split(',').slice(0,2).join(', ')||'Endereço',hint:p.display_name||'',lat:+p.lat,lon:+p.lon,type:p.class==='highway'?'address':'place',houseNumber:number||null,numberRequested:!!house});}
+ }
+ const seen=new Set();
+ const ranked=found.map(p=>{const tokens=norm(p.name+' '+p.hint).split(/[^\p{L}\p{N}]+/u);const hits=streetTerms.filter(t=>tokens.includes(t)).length;const match=streetTerms.length?hits/streetTerms.length:1;const km=distance(lat,lon,p.lat,p.lon);const exact=!!house&&p.houseNumber===house&&match>=.8;const numberDiff=house&&p.houseNumber&&/^\d+$/.test(p.houseNumber)?Math.abs(+p.houseNumber-+house):null;return {...p,km,exactNumber:exact,_match:match,_rank:match*100+(exact?85:0)+(numberDiff!==null?Math.max(0,20-numberDiff/30):0)-Math.min(km,100)*.8}}).filter(p=>p._match>=.5&&(!hasCoords||p.km<80)).filter(p=>{const id=p.lat.toFixed(4)+'|'+p.lon.toFixed(4)+'|'+norm(p.name);if(seen.has(id))return false;seen.add(id);return true}).sort((a,b)=>b._rank-a._rank).slice(0,15).map(({_rank,_match,...p})=>p);
+ const result={results:ranked,numberFound:!!house&&ranked.some(p=>p.exactNumber),requestedNumber:house,partial:!!house&&!ranked.some(p=>p.exactNumber),providerStatus:settled.some(x=>x.status==='fulfilled')?'ok':'unavailable'};
+ if(cache.size>400)cache.clear();cache.set(key,{at:Date.now(),data:result});
+ return res.status(200).json(result);
 };
