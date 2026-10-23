@@ -442,6 +442,14 @@ html[data-theme="dark"] #vaigoTools #vaigoToolsMsg {color:#b7c9ba!important}
       }catch(e){ if(seq!==routingSeq)return;state.routeQuality='Aproximada';render(); }
       finally {if(seq===routingSeq)activeRouteController=null;}
     }
+    function saveConfirmedAddress(p){
+      if(!p||!Number.isFinite(p.lat)||!Number.isFinite(p.lon))return;
+      const label=(p.enteredAddress||p.name||'').trim();if(!label)return;
+      try{const key='zeca_confirmed_addresses_v1';const old=JSON.parse(localStorage.getItem(key)||'[]');const entries=Array.isArray(old)?old:[];const next=[{name:label,hint:'Ponto confirmado manualmente neste dispositivo',lat:p.lat,lon:p.lon,type:'address',manualVerified:true,exactNumber:false},...entries.filter(x=>x.name!==label)].slice(0,40);localStorage.setItem(key,JSON.stringify(next));}catch(e){}
+    }
+    function localConfirmedAddresses(query){
+      try{const entries=JSON.parse(localStorage.getItem('zeca_confirmed_addresses_v1')||'[]');const normalized=t=>String(t||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();const words=normalized(query).split(/\\s+/).filter(x=>x.length>2);return Array.isArray(entries)?entries.filter(p=>words.length&&words.every(w=>normalized(p.name).includes(w))).slice(0,5):[];}catch(e){return []}
+    }
     function chooseDestination(p){
       if(state.running)return;
       state.dest=p;
@@ -538,7 +546,7 @@ html[data-theme="dark"] #vaigoTools #vaigoToolsMsg {color:#b7c9ba!important}
         const url=new URL('/api/search',location.origin);url.searchParams.set('q',query);url.searchParams.set('mode','suggest');url.searchParams.set('lat',state.origin.lat);url.searchParams.set('lon',state.origin.lon);
         const response=await fetch(url,{signal:state.abort.signal});if(!response.ok)throw Error('Serviço de endereços indisponível');
         const data=await response.json();if(seq!==state.searchSeq)return;
-        if(data.results?.length)renderAddressResults(data.results,field,'Busca local');
+        const combined=[...localConfirmedAddresses(query),...(data.results||[])];if(combined.length)renderAddressResults(combined,field,'Busca local');
         else showManualSearch(field,data.providerStatus==='unavailable'?'Serviços públicos temporariamente indisponíveis.':'Número ou rua não localizados. Pesquise somente a rua e ajuste o ponto no mapa.');
       }catch(err){if(err.name!=='AbortError'&&seq===state.searchSeq)showManualSearch(field,'Sugestões indisponíveis.');}
     }
@@ -552,7 +560,7 @@ html[data-theme="dark"] #vaigoTools #vaigoToolsMsg {color:#b7c9ba!important}
         const url=new URL('/api/search',location.origin);url.searchParams.set('q',query);url.searchParams.set('mode','address');url.searchParams.set('lat',state.origin.lat);url.searchParams.set('lon',state.origin.lon);
         const response=await fetch(url,{signal:state.abort.signal});if(!response.ok)throw Error('Não foi possível pesquisar');
         const data=await response.json();if(seq!==state.searchSeq)return;
-        if(data.results?.length){renderAddressResults(data.results,field,'Busca local');if(data.partial)vaigoMessage('Número residencial não confirmado. Escolha a rua e ajuste o pino no mapa antes de confirmar.');}else showManualSearch(field,data.providerStatus==='unavailable'?'Serviços de endereços indisponíveis. Tente novamente.':'Não encontrei esse número. Tente somente o nome da rua e confirme o local no mapa.');
+        const combined=[...localConfirmedAddresses(query),...(data.results||[])];if(combined.length){renderAddressResults(combined,field,'Busca local');if(data.partial)vaigoMessage('Número residencial não confirmado. Escolha a rua e ajuste o pino no mapa antes de confirmar.');}else showManualSearch(field,data.providerStatus==='unavailable'?'Serviços de endereços indisponíveis. Tente novamente.':'Não encontrei esse número. Tente somente o nome da rua e confirme o local no mapa.');
       }catch(err){if(err.name!=='AbortError'&&seq===state.searchSeq)$('suggestions').innerHTML='<div class="small-info" style="padding:11px">Pesquisa indisponível. Verifique sua conexão e tente novamente.</div>';}
     }
     function showManualSearch(field,message='Sugestões automáticas indisponíveis.'){
@@ -609,7 +617,7 @@ function bindSearch(id,field){
       input.addEventListener('focus',()=>{state.searchField=field;if(input.value.length>=3 && !/Minha localização atual|São Paulo ·/.test(input.value))searchAddress(input.value,field);});
       input.addEventListener('keydown',e=>{if(e.key==='Escape')hideSuggestions();if(e.key==='Enter'){e.preventDefault();const first=$('suggestions').querySelector('[data-suggest]');if(first)first.click();else manualAddressSearch(field);}});
     }
-    $('vaigoConfirmHouse')?.addEventListener('click',()=>{if(!state.dest){vaigoMessage('Pesquise e selecione primeiro um destino.');return;}state.dest.manualVerified=true;state.dest.exactNumber=false;state.dest.name=state.dest.enteredAddress||state.dest.name;$('destinationInput').value=state.dest.name;vaigoMessage('✓ Ponto de chegada confirmado manualmente por você. Não houve verificação oficial do número residencial.');toast('Ponto de chegada confirmado no mapa.');});
+    $('vaigoConfirmHouse')?.addEventListener('click',()=>{if(!state.dest){vaigoMessage('Pesquise e selecione primeiro um destino.');return;}state.dest.manualVerified=true;state.dest.exactNumber=false;saveConfirmedAddress(state.dest);state.dest.name=state.dest.enteredAddress||state.dest.name;$('destinationInput').value=state.dest.name;vaigoMessage('✓ Ponto de chegada confirmado manualmente por você. Não houve verificação oficial do número residencial.');toast('Ponto de chegada confirmado no mapa.');});
 $('findAddressButton').addEventListener('click',()=>manualAddressSearch('destination'));
     function setTab(t){state.tab=t;render();if(state.map)setTimeout(()=>state.map.invalidateSize(),80);}
     function updateConfig(){
