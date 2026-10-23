@@ -16,7 +16,7 @@ module.exports=async(req,res)=>{
  const house=(first.match(/(?:^|\s)(\d{1,6})(?=\s|$)/)||[])[1]||null;
  const street=first.replace(/\b\d{1,6}\b/g,' ').replace(/\s+/g,' ').trim();
  const streetTerms=norm(street).replace(/\b(rua|r|avenida|av|travessa|tv)\b/g,' ').split(/[^\p{L}\p{N}]+/u).filter(x=>x.length>1);
- const city=parts.slice(1).filter(x=>!/^\d{5}-?\d{3}$/.test(x)).join(', ');
+ const city=parts.slice(1).filter(x=>!/^\d{5}-?\d{3}$/.test(x)).join(', ');\n const preferredCity=norm(city).includes('francisco beltrao')?'francisco beltrao':(!city&&distance(lat,lon,-26.079,-53.053)<30?'francisco beltrao':norm(parts[1]||''));
  const candidates=[q];
  if(house&&street.length>2)candidates.push([street,city].filter(Boolean).join(', '));
  if(!house&&parts.length>1)candidates.push(first);
@@ -32,7 +32,7 @@ module.exports=async(req,res)=>{
   if(kind==='nominatim')for(const p of data||[]){if(!Number.isFinite(+p.lat)||!Number.isFinite(+p.lon))continue;const number=String(p.address?.house_number||'').trim();found.push({name:number&&p.address?.road?p.address.road+', '+number:p.name||p.display_name?.split(',').slice(0,2).join(', ')||'Endereço',hint:p.display_name||'',lat:+p.lat,lon:+p.lon,type:p.class==='highway'?'address':'place',houseNumber:number||null,numberRequested:!!house});}
  }
  const seen=new Set();
- const ranked=found.map(p=>{const tokens=norm(p.name+' '+p.hint).split(/[^\p{L}\p{N}]+/u);const hits=streetTerms.filter(t=>tokens.includes(t)).length;const match=streetTerms.length?hits/streetTerms.length:1;const km=distance(lat,lon,p.lat,p.lon);const exact=!!house&&p.houseNumber===house&&match>=.8;const numberDiff=house&&p.houseNumber&&/^\d+$/.test(p.houseNumber)?Math.abs(+p.houseNumber-+house):null;return {...p,km,exactNumber:exact,_match:match,_rank:match*100+(exact?85:0)+(numberDiff!==null?Math.max(0,20-numberDiff/30):0)-Math.min(km,100)*.8}}).filter(p=>p._match>=.5&&(!hasCoords||p.km<80)).filter(p=>{const id=p.lat.toFixed(4)+'|'+p.lon.toFixed(4)+'|'+norm(p.name);if(seen.has(id))return false;seen.add(id);return true}).sort((a,b)=>b._rank-a._rank).slice(0,15).map(({_rank,_match,...p})=>p);
+ const ranked=found.map(p=>{const tokens=norm(p.name+' '+p.hint).split(/[^\p{L}\p{N}]+/u);const hits=streetTerms.filter(t=>tokens.includes(t)).length;const match=streetTerms.length?hits/streetTerms.length:1;const km=distance(lat,lon,p.lat,p.lon);const inCity=!!preferredCity&&norm(p.hint).includes(preferredCity);const exact=!!house&&p.houseNumber===house&&match>=.8;const numberDiff=house&&p.houseNumber&&/^\d+$/.test(p.houseNumber)?Math.abs(+p.houseNumber-+house):null;return {...p,km,exactNumber:exact,_match:match,_rank:match*100+(inCity?70:0)+(exact?85:0)+(numberDiff!==null?Math.max(0,20-numberDiff/30):0)-Math.min(km,100)*.8}}).filter(p=>p._match>=.5&&(!hasCoords||p.km<80)).filter(p=>{const id=norm(p.name)+'|'+(norm(p.hint).includes('francisco beltrao')?'francisco beltrao':norm(p.hint).split(',').slice(-2).join(','))+'|'+(p.houseNumber||'')+'|'+(p.type==='place'?p.lat.toFixed(3)+'|'+p.lon.toFixed(3):'');if(seen.has(id))return false;seen.add(id);return true}).sort((a,b)=>b._rank-a._rank).slice(0,15).map(({_rank,_match,...p})=>p);
  const result={results:ranked,numberFound:!!house&&ranked.some(p=>p.exactNumber),requestedNumber:house,partial:!!house&&!ranked.some(p=>p.exactNumber),providerStatus:settled.some(x=>x.status==='fulfilled')?'ok':'unavailable'};
  if(cache.size>400)cache.clear();cache.set(key,{at:Date.now(),data:result});
  return res.status(200).json(result);
