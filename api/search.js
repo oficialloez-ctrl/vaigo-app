@@ -16,7 +16,8 @@ module.exports=async(req,res)=>{
  const house=(first.match(/(?:^|\s)(\d{1,6})(?=\s|$)/)||[])[1]||null;
  const street=first.replace(/\b\d{1,6}\b/g,' ').replace(/\s+/g,' ').trim();
  const streetTerms=norm(street).replace(/\b(rua|r|avenida|av|travessa|tv)\b/g,' ').split(/[^\p{L}\p{N}]+/u).filter(x=>x.length>1);
- const city=parts.slice(1).filter(x=>!/^\d{5}-?\d{3}$/.test(x)).join(', ');\n const preferredCity=norm(city).includes('francisco beltrao')?'francisco beltrao':(!city&&distance(lat,lon,-26.079,-53.053)<30?'francisco beltrao':norm(parts[1]||''));
+ const city=parts.slice(1).filter(x=>!/^\d{5}-?\d{3}$/.test(x)).join(', ');
+ const preferredCity=norm(city).includes('francisco beltrao')?'francisco beltrao':(!city&&distance(lat,lon,-26.079,-53.053)<30?'francisco beltrao':norm(parts[1]||''));
  const candidates=[q];
  if(house&&street.length>2)candidates.push([street,city].filter(Boolean).join(', '));
  if(!house&&parts.length>1)candidates.push(first);
