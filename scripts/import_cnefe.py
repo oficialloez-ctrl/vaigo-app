@@ -23,15 +23,15 @@ with zipfile.ZipFile(io.BytesIO(blob)) as archive:
             return ''
         rows=[];seen=set();invalid=0
         for row in reader:
-            street=field(row,'NOM_LOG','NOM_LOGRADOURO')
+            street=field(row,'NOM_SEGLOGR','NOM_LOG','NOM_LOGRADOURO')
             number=field(row,'NUM_ENDERECO','NUM_LOG')
             lat=field(row,'LATITUDE');lon=field(row,'LONGITUDE')
             if not street or not number or not lat or not lon:invalid+=1;continue
             try:a=float(lat.replace(',','.'));b=float(lon.replace(',','.'))
             except ValueError:invalid+=1;continue
             if not(-34<a<-1 and -75<b<-30):invalid+=1;continue
-            road=' '.join(filter(None,[field(row,'TIP_LOG','TIPO_LOGRADOURO'),street]))
-            item=[road,number,field(row,'NOM_BAIRRO','BAIRRO'),field(row,'CEP'),round(a,6),round(b,6),field(row,'NV_GEO_COORD')]
+            road=' '.join(filter(None,[field(row,'NOM_TIP_SEGLOGR','TIP_LOG','TIPO_LOGRADOURO'),street]))
+            item=[road,number,field(row,'DSC_LOCALIDADE','NOM_BAIRRO','BAIRRO'),field(row,'CEP'),round(a,6),round(b,6),field(row,'NV_GEO_COORD')]
             key=(road.casefold(),number,a,b)
             if key in seen:continue
             seen.add(key);rows.append(item)
