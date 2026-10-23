@@ -539,7 +539,7 @@ html[data-theme="dark"] #vaigoTools #vaigoToolsMsg {color:#b7c9ba!important}
         const response=await fetch(url,{signal:state.abort.signal});if(!response.ok)throw Error('Serviço de endereços indisponível');
         const data=await response.json();if(seq!==state.searchSeq)return;
         if(data.results?.length)renderAddressResults(data.results,field,'Busca local');
-        else showManualSearch(field,'Não encontrei sugestões automáticas.');
+        else showManualSearch(field,data.providerStatus==='unavailable'?'Serviços públicos temporariamente indisponíveis.':'Número ou rua não localizados. Pesquise somente a rua e ajuste o ponto no mapa.');
       }catch(err){if(err.name!=='AbortError'&&seq===state.searchSeq)showManualSearch(field,'Sugestões indisponíveis.');}
     }
     async function manualAddressSearch(field){
@@ -552,8 +552,8 @@ html[data-theme="dark"] #vaigoTools #vaigoToolsMsg {color:#b7c9ba!important}
         const url=new URL('/api/search',location.origin);url.searchParams.set('q',query);url.searchParams.set('mode','address');url.searchParams.set('lat',state.origin.lat);url.searchParams.set('lon',state.origin.lon);
         const response=await fetch(url,{signal:state.abort.signal});if(!response.ok)throw Error('Não foi possível pesquisar');
         const data=await response.json();if(seq!==state.searchSeq)return;
-        renderAddressResults(data.results||[],field,'Busca local');
-      }catch(err){if(err.name!=='AbortError'&&seq===state.searchSeq)$('suggestions').innerHTML='<div class="small-info" style="padding:11px">Pesquisa indisponível. Confirme que abriu pelo servidor v6 (iniciar-vaigo.bat) e que possui internet.</div>';}
+        if(data.results?.length){renderAddressResults(data.results,field,'Busca local');if(data.partial)vaigoMessage('Número residencial não confirmado. Escolha a rua e ajuste o pino no mapa antes de confirmar.');}else showManualSearch(field,data.providerStatus==='unavailable'?'Serviços de endereços indisponíveis. Tente novamente.':'Não encontrei esse número. Tente somente o nome da rua e confirme o local no mapa.');
+      }catch(err){if(err.name!=='AbortError'&&seq===state.searchSeq)$('suggestions').innerHTML='<div class="small-info" style="padding:11px">Pesquisa indisponível. Verifique sua conexão e tente novamente.</div>';}
     }
     function showManualSearch(field,message='Sugestões automáticas indisponíveis.'){
       $('suggestions').hidden=false;
