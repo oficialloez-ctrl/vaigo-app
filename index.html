@@ -3,14 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#111111" />
-  <meta name="description" content="VaiGo — protótipo de mobilidade com GPS ao vivo e estimativas transparentes de tarifas, ganhos e combustível." />
+  <meta name="theme-color" content="#080e09" />
+  <title>ZECA — Sua mobilidade</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/zeca-icon.svg" />
+  <meta name="description" content="ZECA — protótipo de mobilidade com GPS ao vivo e estimativas transparentes de tarifas, ganhos e combustível." />
   
   
   <link rel="preconnect" href="https://server.arcgisonline.com" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous" />
   <style>
-    :root { --black:#111111; --ink:#18191a; --muted:#75777b; --sub:#a1a1a6; --line:#e8e8e8; --fill:#f5f5f5; --white:#fff; --green:#16844a; --red:#bc3131; --shadow:0 16px 48px rgba(0,0,0,.14); font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color:var(--ink); }
+    :root { --black:#111111; --ink:#18191a; --muted:#75777b; --sub:#a1a1a6; --line:#e8e8e8; --fill:#f5f5f5; --white:#fff; --green:#26b83e; --red:#bc3131; --shadow:0 16px 48px rgba(0,0,0,.14); font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color:var(--ink); }
     * { box-sizing:border-box; }
     html, body { margin:0; width:100%; height:100%; overflow:hidden; }
     button, input, select { font:inherit; }
@@ -37,7 +39,9 @@
     .address-search { height:49px; flex:1; display:flex; align-items:center; background:#f4f4f4; border-radius:9px; min-width:0; border:1px solid transparent; transition:border .15s; }
     .address-search:focus-within { background:#fff; border:1px solid #aaa; }
     .address-search input { border:0; background:transparent; outline:0; min-width:0; flex:1; padding:0 13px; font-size:14px; color:#171717; height:100%; font-weight:500; text-overflow:ellipsis; }
-    .address-search input::placeholder { color:#8d8d8d; }
+    .address-clear {border:0;background:transparent;color:#666;cursor:pointer;font-size:22px;line-height:1;padding:5px 12px;flex:none;}
+     .address-clear:hover {color:#111;}
+     .address-search input::placeholder { color:#8d8d8d; }
     .mini-button { width:44px; height:45px; flex:0 0 44px; border:none; border-radius:9px; background:#f3f3f3; display:grid; place-items:center; color:#111; }
     .mini-button:hover { background:#e5e5e5; }
     .mini-button.active { background:#e3f3e9; color:#147b43; }
@@ -160,7 +164,40 @@
       .map-control { width:43px; height:43px; }
     }
     @media(max-width:430px) { .quick-dest button:nth-child(3) { display:none; } .v-sub { font-size:10px; } .panel-body { max-height:54dvh; } .floating-map-ctrls { bottom:calc(54dvh + 30px); } }
-    @media(prefers-reduced-motion:reduce) { * { scroll-behavior:auto!important; transition:none!important; animation:none!important; } }
+    .mobile-collapse-btn{display:none}
+     @media(max-width:810px){
+       .mobile-collapse-btn{display:block;width:100%;padding:10px;border:1px solid #dcdfe2;border-radius:10px;background:#f7f8f9;color:#23272b;font-size:12px;font-weight:750;margin-bottom:8px}
+       .panel-top.is-collapsed > :not(.mobile-collapse-btn){display:none!important}
+       .panel-top.is-collapsed{max-height:65px;overflow:visible}
+       .panel-body.is-collapsed{max-height:60px!important;overflow:hidden!important;padding:9px 15px!important}
+       .panel-body.is-collapsed > :not(.mobile-collapse-btn){display:none!important}
+       .floating-map-ctrls{bottom:90px!important}
+     }
+     html[data-theme="dark"] .mobile-collapse-btn{background:#28332e;color:#f3f6f4;border-color:#43514a}
+     @media(prefers-reduced-motion:reduce) { * { scroll-behavior:auto!important; transition:none!important; animation:none!important; } }
+
+.theme-switch{display:flex;gap:3px;padding:3px;border-radius:9px;background:#eee}
+.theme-switch button{border:0;background:transparent;padding:7px;border-radius:6px;font-size:12px;cursor:pointer}
+.theme-switch button[aria-pressed="true"]{background:#fff;color:#111}
+html[data-theme="dark"]{color-scheme:dark;--ink:#eef4ee;--muted:#b2bdb4;--line:#36423a;--fill:#232c25;--white:#151c17;--green:#67f37b}
+html[data-theme="dark"] body,html[data-theme="dark"] .app,html[data-theme="dark"] .sidebar,html[data-theme="dark"] .panel-top,html[data-theme="dark"] .panel-body,html[data-theme="dark"] #vaigoTools{background:#151c17!important;color:#eef4ee!important}
+html[data-theme="dark"] .brand,html[data-theme="dark"] h1,html[data-theme="dark"] h2,html[data-theme="dark"] h3{color:#eef4ee}
+html[data-theme="dark"] .address-search,html[data-theme="dark"] .mini-button,html[data-theme="dark"] .quick-dest button,html[data-theme="dark"] .tab-bar,html[data-theme="dark"] .vehicle,html[data-theme="dark"] .fare-card,html[data-theme="dark"] .route-stats,html[data-theme="dark"] .field input,html[data-theme="dark"] .demo-chip,html[data-theme="dark"] .profile-dot,html[data-theme="dark"] .suggestions,html[data-theme="dark"] .suggestion,html[data-theme="dark"] .input-info{background:#232d26!important;color:#edf5ed!important;border-color:#39473d!important}
+html[data-theme="dark"] input,html[data-theme="dark"] select{color:#edf5ed!important}
+html[data-theme="dark"] .suggestion:hover,html[data-theme="dark"] .vehicle.selected,html[data-theme="dark"] .tab-bar button.active{background:#354a3a!important;color:#fff!important}
+html[data-theme="dark"] .btn-primary{background:#43c95a;color:#071208}
+html[data-theme="dark"] .theme-switch{background:#2d3930}
+html[data-theme="dark"] .theme-switch button{color:#cbd9cd}
+html[data-theme="dark"] .theme-switch button[aria-pressed="true"]{background:#496b4f;color:white}
+@media(max-width:480px){.demo-chip{display:none}.theme-switch button{font-size:11px;padding:6px}}
+
+/* Barra de ferramentas: respeita o tema, inclusive estilos inline dos botões */
+html[data-theme="dark"] #vaigoTools {border-bottom-color:#36423a!important}
+html[data-theme="dark"] #vaigoTools button {background:#263229!important;border:1px solid #465649!important;color:#eaf5ec!important;transition:background .15s,border-color .15s}
+html[data-theme="dark"] #vaigoTools button:hover {background:#344739!important;border-color:#6ddc7e!important}
+html[data-theme="dark"] #vaigoTools #vaigoUseGPS,
+html[data-theme="dark"] #vaigoTools #vaigoConfirmHouse {background:#203b29!important;border-color:#418a53!important;color:#a9ffb7!important}
+html[data-theme="dark"] #vaigoTools #vaigoToolsMsg {color:#b7c9ba!important}
   </style>
 </head>
 <body>
@@ -176,17 +213,17 @@
   <div class="app">
     <aside class="sidebar" aria-label="Planejamento da corrida">
       <div class="sidebar-inner">
-        <div class="panel-top">
-          <div class="brand-row"><div class="brand" aria-label="VaiGo">vaiGo<span class="brand-point"></span></div><div style="display:flex;align-items:center;gap:9px"><span class="demo-chip">SIMULAÇÃO V9</span><button type="button" class="profile-dot" id="settingsShortcut" aria-label="Abrir administração de teste"><svg class="ui-icon"><use href="#ico-settings"/></svg></button></div></div>
+        <div class="panel-top"><button type="button" id="topPanelToggle" class="mobile-collapse-btn" aria-expanded="true">▴ Recolher busca e ver mapa</button>
+          <div class="brand-row"><div class="brand" aria-label="ZECA"><img src="/assets/zeca-icon.svg" alt="" style="width:37px;height:37px;border-radius:9px;margin-right:3px">ZECA</div><div style="display:flex;align-items:center;gap:9px"><div class="theme-switch" role="group" aria-label="Tema"><button type="button" id="lightTheme" aria-pressed="true">☀ Claro</button><button type="button" id="darkTheme" aria-pressed="false">☾ Escuro</button></div><span class="demo-chip">SIMULAÇÃO V9</span><button type="button" class="profile-dot" id="settingsShortcut" aria-label="Abrir administração de teste"><svg class="ui-icon"><use href="#ico-settings"/></svg></button></div></div>
           <h1>Para onde vamos?</h1>
           <p class="description">Sua próxima viagem começa aqui. Calcule o preço antes de sair.</p>
           <div class="inputs">
             <span class="route-rail"></span>
             <div class="address-row">
-              <div class="address-search"><input id="originInput" autocomplete="off" type="text" aria-label="Origem" value="Ative o GPS para localizar" placeholder="De onde você sai?" /></div>
+              <div class="address-search"><input id="originInput" autocomplete="off" type="text" aria-label="Origem" value="Ative o GPS para localizar" placeholder="De onde você sai?" /><button type="button" class="address-clear" data-clear="origin" aria-label="Limpar origem">×</button></div>
               <button class="mini-button" id="gpsButton" title="Ativar ou pausar GPS em tempo real" aria-label="Ativar ou pausar GPS em tempo real" aria-pressed="false"><svg class="ui-icon"><use href="#ico-locate"/></svg></button>
             </div>
-            <div class="address-row"><div class="address-search"><input id="destinationInput" autocomplete="off" aria-label="Destino" type="text" placeholder="Para onde?" /></div><button class="mini-button" id="mapPickButton" title="Selecionar destino no mapa" aria-label="Selecionar destino no mapa"><svg class="ui-icon"><use href="#ico-pin"/></svg></button></div>
+            <div class="address-row"><div class="address-search"><input id="destinationInput" autocomplete="off" aria-label="Destino" type="text" placeholder="Para onde?" /><button type="button" class="address-clear" data-clear="destination" aria-label="Limpar destino">×</button></div><button class="mini-button" id="mapPickButton" title="Selecionar destino no mapa" aria-label="Selecionar destino no mapa"><svg class="ui-icon"><use href="#ico-pin"/></svg></button></div>
           </div>
           <div class="suggestions" id="suggestions" hidden role="listbox" aria-label="Sugestões de endereços"></div><button type="button" id="findAddressButton" style="margin:8px 0 0 19px;border:0;border-radius:8px;background:#171717;color:#fff;font-weight:700;font-size:12px;padding:11px 13px;cursor:pointer">Pesquisar destino</button>
           <div class="live-row"><span class="status" id="gpsStatus"><span class="status-dot"></span><span id="gpsLabel">GPS não ativado</span></span><button class="linkish" id="resetRouteButton">Limpar rota</button></div>
@@ -204,7 +241,7 @@
 <button type="button" id="vaigoConfirmHouse" style="padding:9px;border-radius:8px;border:1px solid #b5d6bb;background:#ecf7ee">✓ Confirmar entrada da residência</button>
 <button type="button" id="vaigoDrivers" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">🚘 Motoristas de teste</button>
 <div id="vaigoToolsMsg" aria-live="polite" style="flex-basis:100%;font-size:11px;color:#666">Números não confirmados devem ser conferidos no mapa. Motoristas são simulados.</div></div>
-<div class="panel-body">
+<div class="panel-body is-collapsed"><button type="button" id="bottomPanelToggle" class="mobile-collapse-btn" aria-expanded="false">▾ Ver opções de corrida e ferramentas</button>
           <div class="tab-bar" role="tablist" aria-label="Painéis"><button id="passengerTab" role="tab" aria-selected="true" class="active">Passageiro</button><button id="financeTab" role="tab" aria-selected="false">Motorista</button><button id="adminTab" role="tab" aria-selected="false">ADM</button></div>
           <section id="passengerPanel" role="tabpanel" aria-labelledby="passengerTab">
             <div class="section-title"><h2>Escolha uma viagem</h2><small>Valores estimados</small></div>
@@ -256,7 +293,7 @@
     const money = n => (Number.isFinite(n) ? n : 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
     const num = (id, fallback, min, max) => { const n = Number($(id).value.replace?.(',','.') ?? $(id).value); return Number.isFinite(n) && n >= min && n <= max ? n : fallback; };
     const defs = {
-      eco: {name:'VaiGo X', sub:'Econômico · até 4 pessoas', multiplier:1, liters:12, silhouette:'#2b2e32'},
+      eco: {name:'ZECA X', sub:'Econômico · até 4 pessoas', multiplier:1, liters:12, silhouette:'#2b2e32'},
       comfort: {name:'Comfort', sub:'Mais conforto · até 4 pessoas', multiplier:1.35, liters:10, silhouette:'#56575c'},
       xl: {name:'XL', sub:'Espaço extra · até 6 pessoas', multiplier:1.85, liters:8, silhouette:'#454951'}
     };
@@ -348,7 +385,8 @@
       // Basemap for prototype testing: Esri street map. No secret is embedded.
       // If unavailable, try the humanitarian OSM layer as a fallback.
       const providers=[
-        {url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',options:{maxZoom:19,attribution:'Tiles &copy; Esri, HERE, Garmin, USGS and contributors'}},
+        {url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',options:{maxZoom:19,attribution:'&copy; OpenStreetMap contributors'}},
+         {url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',options:{maxZoom:19,attribution:'Tiles &copy; Esri, HERE, Garmin, USGS and contributors'}},
         {url:'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',options:{subdomains:'abc',maxZoom:19,attribution:'&copy; OpenStreetMap contributors, tiles by HOT'}}
       ];
       let providerIndex=0, failedTiles=0, loadedTiles=0, switching=false;
@@ -414,6 +452,14 @@
         updateMarkers();render();
       }catch(e){ if(seq!==routingSeq)return;state.routeQuality='Aproximada';render(); }
       finally {if(seq===routingSeq)activeRouteController=null;}
+    }
+    function saveConfirmedAddress(p){
+      if(!p||!Number.isFinite(p.lat)||!Number.isFinite(p.lon))return;
+      const label=(p.enteredAddress||p.name||'').trim();if(!label)return;
+      try{const key='zeca_confirmed_addresses_v1';const old=JSON.parse(localStorage.getItem(key)||'[]');const entries=Array.isArray(old)?old:[];const next=[{name:label,hint:'Ponto confirmado manualmente neste dispositivo',lat:p.lat,lon:p.lon,type:'address',manualVerified:true,exactNumber:false},...entries.filter(x=>x.name!==label)].slice(0,40);localStorage.setItem(key,JSON.stringify(next));}catch(e){}
+    }
+    function localConfirmedAddresses(query){
+      try{const entries=JSON.parse(localStorage.getItem('zeca_confirmed_addresses_v1')||'[]');const normalized=t=>String(t||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();const words=normalized(query).split(/\\s+/).filter(x=>x.length>2);return Array.isArray(entries)?entries.filter(p=>words.length&&words.every(w=>normalized(p.name).includes(w))).slice(0,5):[];}catch(e){return []}
     }
     function chooseDestination(p){
       if(state.running)return;
@@ -499,7 +545,7 @@
     function renderAddressResults(results,field,source){
       $('suggestions').hidden=false;
       if(!results.length){$('suggestions').innerHTML='<div class="small-info" style="padding:11px">Endereço não encontrado. Tente o nome da rua, número e cidade ou escolha o destino no mapa.</div>';return;}
-      $('suggestions').innerHTML=results.map((p,i)=>`<button class="suggestion" type="button" data-suggest="${i}" role="option"><span class="suggestion-icon">${p.type==='place'?'🏪':'⌖'}</span><span style="min-width:0"><span class="suggestion-name">${escapeHtml(p.name)}</span><span class="suggestion-hint">${escapeHtml(p.exactNumber?'✅ Número confirmado · ':p.numberRequested&&p.type!=='place'?'⚠️ Número não confirmado · ':p.type==='place'?'📍 Estabelecimento · ':'Rua / endereço · ')}${escapeHtml(p.hint||'')}${Number.isFinite(p.km)?' · '+p.km.toFixed(1).replace('.',',')+' km':''}</span></span></button>`).join('')+`<div class="small-info" style="padding:6px 10px">Resultados de endereço e locais conhecidos · confira o ponto no mapa antes de solicitar</div>`;
+      $('suggestions').innerHTML=results.map((p,i)=>`<button class="suggestion" type="button" data-suggest="${i}" role="option"><span class="suggestion-icon">${p.type==='place'?'🏪':'⌖'}</span><span style="min-width:0"><span class="suggestion-name">${escapeHtml(p.name)}</span><span class="suggestion-hint">${escapeHtml(p.exactNumber?'✅ Rua e número encontrados · ':p.houseNumber?'📍 Número cadastrado próximo · ':p.numberRequested?'⚠️ Número solicitado não localizado · ':p.type==='place'?'📍 Estabelecimento · ':'Rua / endereço · ')}${escapeHtml(p.hint||'')}${Number.isFinite(p.km)?' · '+p.km.toFixed(1).replace('.',',')+' km':''}</span></span></button>`).join('')+`<div class="small-info" style="padding:6px 10px">Resultados de endereço e locais conhecidos · confira o ponto no mapa antes de solicitar</div>`;
       document.querySelectorAll('[data-suggest]').forEach(b=>b.addEventListener('click',()=>{const p=results[Number(b.dataset.suggest)];field==='origin'?chooseOrigin(p):chooseDestination(p);}));
     }
     async function searchAddress(query,field){
@@ -511,8 +557,8 @@
         const url=new URL('/api/search',location.origin);url.searchParams.set('q',query);url.searchParams.set('mode','suggest');url.searchParams.set('lat',state.origin.lat);url.searchParams.set('lon',state.origin.lon);
         const response=await fetch(url,{signal:state.abort.signal});if(!response.ok)throw Error('Serviço de endereços indisponível');
         const data=await response.json();if(seq!==state.searchSeq)return;
-        if(data.results?.length)renderAddressResults(data.results,field,'Busca local');
-        else showManualSearch(field,'Não encontrei sugestões automáticas.');
+        const combined=[...localConfirmedAddresses(query),...(data.results||[])];if(combined.length)renderAddressResults(combined,field,'Busca local');
+        else showManualSearch(field,data.providerStatus==='unavailable'?'Serviços públicos temporariamente indisponíveis.':'Número ou rua não localizados. Pesquise somente a rua e ajuste o ponto no mapa.');
       }catch(err){if(err.name!=='AbortError'&&seq===state.searchSeq)showManualSearch(field,'Sugestões indisponíveis.');}
     }
     async function manualAddressSearch(field){
@@ -525,8 +571,8 @@
         const url=new URL('/api/search',location.origin);url.searchParams.set('q',query);url.searchParams.set('mode','address');url.searchParams.set('lat',state.origin.lat);url.searchParams.set('lon',state.origin.lon);
         const response=await fetch(url,{signal:state.abort.signal});if(!response.ok)throw Error('Não foi possível pesquisar');
         const data=await response.json();if(seq!==state.searchSeq)return;
-        renderAddressResults(data.results||[],field,'Busca local');
-      }catch(err){if(err.name!=='AbortError'&&seq===state.searchSeq)$('suggestions').innerHTML='<div class="small-info" style="padding:11px">Pesquisa indisponível. Confirme que abriu pelo servidor v6 (iniciar-vaigo.bat) e que possui internet.</div>';}
+        const combined=[...localConfirmedAddresses(query),...(data.results||[])];if(combined.length){renderAddressResults(combined,field,'Busca local');if(data.partial)vaigoMessage('Número residencial não confirmado. Escolha a rua e ajuste o pino no mapa antes de confirmar.');}else showManualSearch(field,data.providerStatus==='unavailable'?'Serviços de endereços indisponíveis. Tente novamente.':'Não encontrei esse número. Tente somente o nome da rua e confirme o local no mapa.');
+      }catch(err){if(err.name!=='AbortError'&&seq===state.searchSeq)$('suggestions').innerHTML='<div class="small-info" style="padding:11px">Pesquisa indisponível. Verifique sua conexão e tente novamente.</div>';}
     }
     function showManualSearch(field,message='Sugestões automáticas indisponíveis.'){
       $('suggestions').hidden=false;
@@ -582,7 +628,7 @@ function bindSearch(id,field){
       input.addEventListener('focus',()=>{state.searchField=field;if(input.value.length>=3 && !/Minha localização atual|São Paulo ·/.test(input.value))searchAddress(input.value,field);});
       input.addEventListener('keydown',e=>{if(e.key==='Escape')hideSuggestions();if(e.key==='Enter'){e.preventDefault();const first=$('suggestions').querySelector('[data-suggest]');if(first)first.click();else manualAddressSearch(field);}});
     }
-    $('vaigoConfirmHouse')?.addEventListener('click',()=>{if(!state.dest){vaigoMessage('Pesquise e selecione primeiro um destino.');return;}state.dest.manualVerified=true;state.dest.exactNumber=false;state.dest.name=state.dest.enteredAddress||state.dest.name;$('destinationInput').value=state.dest.name;vaigoMessage('✓ Ponto de chegada confirmado manualmente por você. Não houve verificação oficial do número residencial.');toast('Ponto de chegada confirmado no mapa.');});
+    $('vaigoConfirmHouse')?.addEventListener('click',()=>{if(!state.dest){vaigoMessage('Pesquise e selecione primeiro um destino.');return;}state.dest.manualVerified=true;state.dest.exactNumber=false;saveConfirmedAddress(state.dest);state.dest.name=state.dest.enteredAddress||state.dest.name;$('destinationInput').value=state.dest.name;vaigoMessage('✓ Ponto de chegada confirmado manualmente por você. Não houve verificação oficial do número residencial.');toast('Ponto de chegada confirmado no mapa.');});
 $('findAddressButton').addEventListener('click',()=>manualAddressSearch('destination'));
     function setTab(t){state.tab=t;render();if(state.map)setTimeout(()=>state.map.invalidateSize(),80);}
     function updateConfig(){
@@ -650,6 +696,11 @@ $('findAddressButton').addEventListener('click',()=>manualAddressSearch('destina
       state.running=false;state.rideStage='idle';state.rideProgress=0;state.lockedFare=null;
       render();toast(`Corrida simulada concluída · passageiro ${money(c.fare)} · motorista ${money(c.driverNet)} após gasolina.`);
     }
+    function setZecaTheme(theme){const t=theme==='dark'?'dark':'light';document.documentElement.dataset.theme=t;$('lightTheme').setAttribute('aria-pressed',String(t==='light'));$('darkTheme').setAttribute('aria-pressed',String(t==='dark'));try{localStorage.setItem('zeca_theme',t)}catch(e){}}
+    let savedTheme='light';try{savedTheme=localStorage.getItem('zeca_theme')||'light'}catch(e){}
+    setZecaTheme(savedTheme);
+    $('lightTheme').addEventListener('click',()=>setZecaTheme('light'));
+    $('darkTheme').addEventListener('click',()=>setZecaTheme('dark'));
     $('settingsShortcut').addEventListener('click',()=>setTab('admin'));
     $('passengerTab').addEventListener('click',()=>setTab('passenger'));
     $('financeTab').addEventListener('click',()=>setTab('finance'));
@@ -663,12 +714,47 @@ $('findAddressButton').addEventListener('click',()=>manualAddressSearch('destina
     $('requestButton').addEventListener('click',toggleRide);
     $('driverAction').addEventListener('click',driverAction);
     bindSearch('originInput','origin');bindSearch('destinationInput','destination');
+    document.querySelectorAll('[data-clear]').forEach(button=>button.addEventListener('click',()=>{
+      if(state.running){toast('Finalize a corrida simulada antes de limpar o endereço.');return;}
+      clearTimeout(state.debounce);
+      ++state.searchSeq;
+      if(state.abort){state.abort.abort();state.abort=null;}
+      hideSuggestions();
+      const field=button.dataset.clear;
+      if(field==='destination'){
+        $('destinationInput').value='';state.dest=null;state.pickOnMap=false;
+        $('mapPickButton').classList.remove('active');
+        getRoute();
+        vaigoMessage('Destino removido. Digite outro endereço ou selecione no mapa.');
+        $('destinationInput').focus();
+      }else if(field==='origin'){
+        $('originInput').value='';
+        pauseGPS('GPS pausado');
+        state.pickupMode='manual';
+        // Mantém coordenadas internas até um novo embarque ser escolhido.
+        // O campo fica realmente vazio, sem reintroduzir a localização anterior.
+        vaigoMessage('Origem limpa. Digite outro endereço ou use o GPS.');
+        $('originInput').focus();
+      }
+    }));
+
     for(const id of Object.keys(DEFAULT))$(id).addEventListener('input',updateConfig);
     for(const id of ['manualKm','manualMin'])$(id).addEventListener('input',manualEdited);
     $('resetSettings').addEventListener('click',()=>{for(const [id,val] of Object.entries(DEFAULT))$(id).value=val;updateConfig();toast('Parâmetros restaurados.');});
     document.addEventListener('pointerdown',e=>{if(!$('suggestions').contains(e.target)&&!e.target.matches('#originInput,#destinationInput'))hideSuggestions();});
     if(window.L)initMap();else window.addEventListener('load',()=>{if(window.L)initMap();else $('mapFallback').style.display='flex';});
-    // Keep additional tools inside the scrollable lower panel on small screens.
+    const topPanel=document.querySelector('.panel-top'),bottomPanel=document.querySelector('.panel-body');
+     const topToggle=document.getElementById('topPanelToggle'),bottomToggle=document.getElementById('bottomPanelToggle');
+     function toggleMobilePanel(panel,button){
+       const collapsed=panel.classList.toggle('is-collapsed');
+       button.setAttribute('aria-expanded',String(!collapsed));
+       button.textContent=panel===topPanel?(collapsed?'▾ Mostrar pesquisa de endereços':'▴ Recolher busca e ver mapa'):(collapsed?'▾ Ver opções de corrida e ferramentas':'▴ Recolher opções e ver mapa');
+       if(state.map)setTimeout(()=>state.map.invalidateSize(),100);
+     }
+     topToggle.addEventListener('click',()=>toggleMobilePanel(topPanel,topToggle));
+     bottomToggle.addEventListener('click',()=>toggleMobilePanel(bottomPanel,bottomToggle));
+     if(window.innerWidth>810)bottomPanel.classList.remove('is-collapsed');
+     // Keep additional tools inside the scrollable lower panel on small screens.
     // Previously the toolbar remained in a full-screen pointer-events:none
     // sidebar layer, where it could visually overlap search and block touches.
     const mobileLayout = window.matchMedia('(max-width:810px)');

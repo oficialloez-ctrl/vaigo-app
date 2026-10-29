@@ -1,0 +1,31 @@
+name: Importar enderecos CNEFE
+on:
+  workflow_dispatch:
+    inputs:
+      codigo_municipio:
+        description: Codigo IBGE do municipio
+        required: true
+        default: '4108403'
+      nome_arquivo:
+        description: Nome do arquivo IBGE sem codigo e .zip
+        required: true
+        default: 'FRANCISCO_BELTRAO'
+jobs:
+  importar:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Baixar e processar CNEFE
+        run: python scripts/import_cnefe.py "${{ inputs.codigo_municipio }}" "${{ inputs.nome_arquivo }}"
+      - name: Validar e publicar dados na branch
+        run: |
+          python -m json.tool "data/cnefe/${{ inputs.codigo_municipio }}.json" >/dev/null
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/cnefe/
+          git diff --cached --quiet || (git commit -m "data: importar CNEFE ${{ inputs.codigo_municipio }}" && git push)
