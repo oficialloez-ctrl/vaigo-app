@@ -1,3 +1,4 @@
+const {parseAddress}=require('./_address');
 // Optional CNEFE search layer. No data means no behavior change.
 const fs=require('fs'),path=require('path');
 const norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
@@ -9,8 +10,8 @@ function load(code){
  try{const data=JSON.parse(fs.readFileSync(filename,'utf8'));const rows=Array.isArray(data.rows)?data.rows:[];memo.set(code,rows);return rows;}catch(e){return null;}
 }
 function lookup({q,lat,lon,limit=12}){
- const query=norm(q),number=(query.match(/\b\d{1,6}\b/)||[])[0];
- const street=norm(query.split(',')[0].replace(/\b\d{1,6}\b/g,'').replace(/\b(rua|r|avenida|av|travessa|tv)\b/g,' ')).replace(/\s+/g,' ').trim();
+ const {street:roadQuery, house:number}=parseAddress(q);
+ const street=norm(roadQuery).replace(/\b(rua|r|avenida|av|travessa|tv)\b/g,' ').replace(/\s+/g,' ').trim();
  if(street.length<3)return [];
  const codes=['4108403']; // Add municipalities only after their files are imported and validated.
  const found=[];
