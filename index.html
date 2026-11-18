@@ -57,7 +57,7 @@
     .suggestion:hover, .suggestion:focus { background:#f4f4f4; }
     .suggestion-icon { width:29px; height:29px; border-radius:50%; background:#eee; display:grid; place-items:center; flex:0 0 auto; }
     .suggestion-name { font-size:13px; font-weight:680; display:block; }
-    .suggestion-hint { display:block; font-size:11px; color:#777; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:270px; }
+    .suggestion-hint { display:block; font-size:11px; color:#777; margin-top:2px; white-space:normal; overflow-wrap:anywhere; max-width:100%; }
     .small-info { color:var(--muted); font-size:11px; line-height:1.5; }
     .quick-dest { display:flex; flex-wrap:wrap; gap:7px; padding-top:14px; }
     .quick-dest button { background:#f6f6f6; border:1px solid #ededed; padding:9px 10px; border-radius:999px; font-size:11px; font-weight:620; }
@@ -248,6 +248,7 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
 <button type="button" id="vaigoFavShow" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">★ Favoritos</button>
 <button type="button" id="vaigoPinToggle" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">📍 Ajustar embarque</button>
 <button type="button" id="vaigoUseGPS" style="padding:9px;border-radius:8px;border:1px solid #b5d6bb;background:#ecf7ee">◎ Usar GPS no embarque</button>
+<button type="button" id="zoomHouse" style="padding:9px;border:1px solid #bbb;border-radius:8px">Ver entrada no mapa</button>
 <button type="button" id="vaigoConfirmHouse" style="padding:9px;border-radius:8px;border:1px solid #b5d6bb;background:#ecf7ee">✓ Confirmar entrada da residência</button>
 <button type="button" id="vaigoDrivers" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">🚘 Motoristas de teste</button>
 <div id="vaigoToolsMsg" aria-live="polite" style="flex-basis:100%;font-size:11px;color:#666">Números não confirmados devem ser conferidos no mapa. Motoristas são simulados.</div></div>
@@ -437,7 +438,7 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
     function updateMarkers() {
       if(!state.map)return;
       state.startMarker.setLatLng([state.origin.lat,state.origin.lon]);
-      if(state.dest) {if(!state.destMarker){state.destMarker=L.marker([state.dest.lat,state.dest.lon],{icon:leafIcon('dest'),draggable:true}).addTo(state.map);state.destMarker.on('dragend',()=>{if(state.running)return;const p=state.destMarker.getLatLng();chooseDestination({name:state.dest?.name||'Destino ajustado no mapa',enteredAddress:state.dest?.enteredAddress||$('destinationInput').value,requestedNumber:state.dest?.requestedNumber,numberRequested:!!state.dest?.numberRequested,lat:p.lat,lon:p.lng,exactNumber:false});vaigoMessage('Marcador posicionado. Clique em Confirmar entrada da residência para usar esse ponto como destino manual.');});}else state.destMarker.setLatLng([state.dest.lat,state.dest.lon]);}
+      if(state.dest) {if(!state.destMarker){state.destMarker=L.marker([state.dest.lat,state.dest.lon],{icon:leafIcon('dest'),draggable:true}).addTo(state.map);state.destMarker.on('dragend',()=>{if(state.running)return;const p=state.destMarker.getLatLng();chooseDestination({name:state.dest?.name||'Destino ajustado no mapa',addressHint:state.dest?.addressHint||state.dest?.hint,enteredAddress:state.dest?.enteredAddress||$('destinationInput').value,requestedNumber:state.dest?.requestedNumber,numberRequested:!!state.dest?.numberRequested,lat:p.lat,lon:p.lng,exactNumber:false});vaigoMessage('Marcador posicionado. Clique em Confirmar entrada da residência para usar esse ponto como destino manual.');});}else state.destMarker.setLatLng([state.dest.lat,state.dest.lon]);}
       else if(state.destMarker){state.map.removeLayer(state.destMarker);state.destMarker=null;}
       if(state.routeLine){state.map.removeLayer(state.routeLine);state.routeLine=null;}
       if(state.dest && state.originReady) {const coords=state.route?.coords || [[state.origin.lat,state.origin.lon],[state.dest.lat,state.dest.lon]];state.routeLine=L.polyline(coords,{color:'#121212',weight:6,opacity:.90,lineCap:'round',lineJoin:'round',dashArray:state.route?'':'6,10'}).addTo(state.map);}
@@ -471,7 +472,7 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
     function saveConfirmedAddress(p){
       if(!p||!Number.isFinite(p.lat)||!Number.isFinite(p.lon))return;
       const label=(p.enteredAddress||p.name||'').trim();if(!label)return;
-      try{const key='zeca_confirmed_addresses_v1';const old=JSON.parse(localStorage.getItem(key)||'[]');const entries=Array.isArray(old)?old:[];const next=[{name:label,hint:'Ponto confirmado manualmente neste dispositivo',lat:p.lat,lon:p.lon,type:'address',manualVerified:true,exactNumber:false},...entries.filter(x=>x.name!==label)].slice(0,40);localStorage.setItem(key,JSON.stringify(next));}catch(e){}
+      try{const key='zeca_confirmed_addresses_v1';const old=JSON.parse(localStorage.getItem(key)||'[]');const entries=Array.isArray(old)?old:[];const next=[{name:label,hint:p.addressHint||p.hint||'Ponto confirmado manualmente neste dispositivo',addressHint:p.addressHint||p.hint||'',lat:p.lat,lon:p.lon,type:'address',manualVerified:true,exactNumber:false},...entries.filter(x=>x && (x.name!==label || (x.addressHint||'')!==(p.addressHint||p.hint||'')))].slice(0,40);localStorage.setItem(key,JSON.stringify(next));}catch(e){}
     }
     function localConfirmedAddresses(query){
       try {
@@ -481,7 +482,7 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
         if(!Array.isArray(entries)||!words.length)return [];
         return entries.filter(p=>{
           if(!p||!Number.isFinite(p.lat)||!Number.isFinite(p.lon))return false;
-          const saved=tokens(p.name);
+          const saved=tokens([p.name,p.addressHint].filter(Boolean).join(' '));
           return words.every(word=>saved.some(token=>/^\d+$/.test(word)?token===word:token.startsWith(word)));
         }).slice(0,5);
       }catch(e){return [];}
@@ -495,7 +496,7 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
       $('destinationInput').value=p.enteredAddress||p.name;
       hideSuggestions();
       getRoute();
-      toast('Destino selecionado. Calculando estimativa.');if(p.numberRequested&&!p.exactNumber)vaigoMessage('⚠️ Número não encontrado na base. Arraste o pino de destino até a entrada correta e clique em Confirmar entrada da residência.');else vaigoMessage('Destino escolhido. Você pode arrastar os marcadores para refinar os pontos.');
+      toast('Destino selecionado. Calculando estimativa.');if(p.manualVerified)vaigoMessage('Entrada confirmada neste aparelho.');else if(p.exactNumber)vaigoMessage('Número encontrado. Para conferir a entrada, toque em Ver entrada no mapa.');else if(p.numberRequested)vaigoMessage('⚠️ Número não encontrado na base. Arraste o pino de destino até a entrada correta e clique em Confirmar entrada da residência.');else vaigoMessage('Destino escolhido. Você pode arrastar os marcadores para refinar os pontos.');
     }
     function chooseOrigin(p,mode='manual'){
       if(state.running)return;
@@ -571,7 +572,7 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
     function renderAddressResults(results,field,source){
       $('suggestions').hidden=false;
       if(!results.length){$('suggestions').innerHTML='<div class="small-info" style="padding:11px">Endereço não encontrado. Tente o nome da rua, número e cidade ou escolha o destino no mapa.</div>';return;}
-      $('suggestions').innerHTML=results.map((p,i)=>`<button class="suggestion" type="button" data-suggest="${i}" role="option"><span class="suggestion-icon">${p.type==='place'?'🏪':'⌖'}</span><span style="min-width:0"><span class="suggestion-name">${escapeHtml(p.name)}</span><span class="suggestion-hint">${escapeHtml(p.exactNumber?'✅ Rua e número encontrados · ':p.houseNumber?'📍 Número cadastrado próximo · ':p.numberRequested?'⚠️ Número solicitado não localizado · ':p.type==='place'?'📍 Estabelecimento · ':'Rua / endereço · ')}${escapeHtml(p.hint||'')}${Number.isFinite(p.km)?' · '+p.km.toFixed(1).replace('.',',')+' km':''}</span></span></button>`).join('')+`<div class="small-info" style="padding:6px 10px">Resultados de endereço e locais conhecidos · confira o ponto no mapa antes de solicitar</div>`;
+      $('suggestions').innerHTML=results.map((p,i)=>`<button class="suggestion" type="button" data-suggest="${i}" role="option"><span class="suggestion-icon">${p.type==='place'?'🏪':'⌖'}</span><span style="min-width:0"><span class="suggestion-name">${escapeHtml(p.name)}</span><span class="suggestion-hint">${escapeHtml(p.manualVerified?'Entrada confirmada neste aparelho · ':p.exactNumber?'Número encontrado no cadastro · ':p.houseNumber?'📍 Número cadastrado próximo · ':p.numberRequested?'⚠️ Número solicitado não localizado · ':p.type==='place'?'📍 Estabelecimento · ':'Rua / endereço · ')}${escapeHtml(p.hint||'')}${Number.isFinite(p.km)?' · '+p.km.toFixed(1).replace('.',',')+' km':''}</span></span></button>`).join('')+`<div class="small-info" style="padding:6px 10px">Resultados de endereço e locais conhecidos · confira o ponto no mapa antes de solicitar</div>`;
       document.querySelectorAll('[data-suggest]').forEach(b=>b.addEventListener('click',()=>{const p=results[Number(b.dataset.suggest)];field==='origin'?chooseOrigin(p):chooseDestination(p);}));
     }
     async function searchAddress(query,field){
@@ -583,7 +584,7 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
         const url=new URL('/api/search',location.origin);url.searchParams.set('q',query);url.searchParams.set('mode','suggest');url.searchParams.set('lat',state.origin.lat);url.searchParams.set('lon',state.origin.lon);
         const response=await fetch(url,{signal:state.abort.signal});if(!response.ok)throw Error('Serviço de endereços indisponível');
         const data=await response.json();if(seq!==state.searchSeq)return;
-        const combined=[...(data.results||[]).filter(p=>p.exactNumber),...localConfirmedAddresses(query),...(data.results||[]).filter(p=>!p.exactNumber)].map(p=>({...p,requestedNumber:data.requestedNumber}));if(combined.length)renderAddressResults(combined,field,'Busca local');
+        const combined=[...localConfirmedAddresses(query),...(data.results||[]).filter(p=>p.exactNumber),...(data.results||[]).filter(p=>!p.exactNumber)].map(p=>({...p,requestedNumber:data.requestedNumber}));if(combined.length)renderAddressResults(combined,field,'Busca local');
         else showManualSearch(field,data.providerStatus==='unavailable'?'Serviços públicos temporariamente indisponíveis.':'Número ou rua não localizados. Pesquise somente a rua e ajuste o ponto no mapa.');
       }catch(err){if(err.name!=='AbortError'&&seq===state.searchSeq)showManualSearch(field,'Sugestões indisponíveis.');}
     }
@@ -597,7 +598,7 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
         const url=new URL('/api/search',location.origin);url.searchParams.set('q',query);url.searchParams.set('mode','address');url.searchParams.set('lat',state.origin.lat);url.searchParams.set('lon',state.origin.lon);
         const response=await fetch(url,{signal:state.abort.signal});if(!response.ok)throw Error('Não foi possível pesquisar');
         const data=await response.json();if(seq!==state.searchSeq)return;
-        const combined=[...(data.results||[]).filter(p=>p.exactNumber),...localConfirmedAddresses(query),...(data.results||[]).filter(p=>!p.exactNumber)].map(p=>({...p,requestedNumber:data.requestedNumber}));if(combined.length){renderAddressResults(combined,field,'Busca local');if(data.partial)vaigoMessage('Número residencial não confirmado. Escolha a rua e ajuste o pino no mapa antes de confirmar.');}else showManualSearch(field,data.providerStatus==='unavailable'?'Serviços de endereços indisponíveis. Tente novamente.':'Não encontrei esse número. Tente somente o nome da rua e confirme o local no mapa.');
+        const combined=[...localConfirmedAddresses(query),...(data.results||[]).filter(p=>p.exactNumber),...(data.results||[]).filter(p=>!p.exactNumber)].map(p=>({...p,requestedNumber:data.requestedNumber}));if(combined.length){renderAddressResults(combined,field,'Busca local');if(data.partial)vaigoMessage('Número residencial não confirmado. Escolha a rua e ajuste o pino no mapa antes de confirmar.');}else showManualSearch(field,data.providerStatus==='unavailable'?'Serviços de endereços indisponíveis. Tente novamente.':'Não encontrei esse número. Tente somente o nome da rua e confirme o local no mapa.');
       }catch(err){if(err.name!=='AbortError'&&seq===state.searchSeq)$('suggestions').innerHTML='<div class="small-info" style="padding:11px">Pesquisa indisponível. Verifique sua conexão e tente novamente.</div>';}
     }
     function showManualSearch(field,message='Sugestões automáticas indisponíveis.'){
@@ -659,6 +660,17 @@ function bindSearch(id,field){
       input.addEventListener('focus',()=>{hideSuggestions();state.searchField=field;if(!state.running && input.value.length>=3 && input.value!=='Minha localização atual')searchAddress(input.value,field);});
       input.addEventListener('keydown',e=>{if(e.key==='Escape')hideSuggestions();if(e.key==='Enter'){e.preventDefault();const first=$('suggestions').querySelector('[data-suggest]');if(first)first.click();else manualAddressSearch(field);}});
     }
+    $('zoomHouse').addEventListener('click',()=>{
+      if(!state.dest||!state.map){vaigoMessage('Selecione um destino e aguarde o mapa carregar.');return;}
+      if(window.matchMedia('(max-width:810px)').matches){
+        for(const id of ['topPanelToggle','bottomPanelToggle']){
+          const button=$(id);
+          if(!button.parentElement.classList.contains('is-collapsed'))button.click();
+        }
+      }
+      state.map.setView([state.dest.lat,state.dest.lon],18);
+      toast('Confira a entrada. Arraste o pino para ajustar.');
+    });
     $('vaigoConfirmHouse')?.addEventListener('click',()=>{if(!state.dest){vaigoMessage('Pesquise e selecione primeiro um destino.');return;}state.dest.manualVerified=true;state.dest.exactNumber=false;saveConfirmedAddress(state.dest);state.dest.name=state.dest.enteredAddress||state.dest.name;$('destinationInput').value=state.dest.name;vaigoMessage('✓ Ponto de chegada confirmado manualmente por você. Não houve verificação oficial do número residencial.');toast('Ponto de chegada confirmado no mapa.');});
 $('findAddressButton').addEventListener('click',()=>manualAddressSearch('destination'));
     function setTab(t){state.tab=t;render();if(state.map)setTimeout(()=>state.map.invalidateSize(),80);}

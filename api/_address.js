@@ -1,5 +1,6 @@
 // Preserve numbers in street names such as "Rua 7 de Setembro".
 function parseAddress(query) {
+  query=query.replace(/(\d)\s+(?=(?:apto\.?|apartamento|bloco|casa|fundos|frente|sala)\b)/ig,'$1, ').replace(/\bapto\.?\s*/ig,'apartamento ');
   const [first = '', ...parts] = query.split(',').map(part => part.trim()).filter(Boolean);
   const numberPart = /^(?:n[º°o.]?\s*)?(\d{1,6})$/i.exec(parts[0] || '');
   const suffix = first.match(/^(.+?)\s+(?:n[º°o.]?\s*)?(\d{1,6})$/);

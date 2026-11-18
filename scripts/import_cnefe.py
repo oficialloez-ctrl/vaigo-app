@@ -26,15 +26,20 @@ with zipfile.ZipFile(io.BytesIO(blob)) as archive:
             street=field(row,'NOM_SEGLOGR','NOM_LOG','NOM_LOGRADOURO')
             number=field(row,'NUM_ENDERECO','NUM_LOG')
             lat=field(row,'LATITUDE');lon=field(row,'LONGITUDE')
-            if not street or number in ('','0') or not lat or not lon:invalid+=1;continue
+            if not street or not lat or not lon:invalid+=1;continue
             try:a=float(lat.replace(',','.'));b=float(lon.replace(',','.'))
             except ValueError:invalid+=1;continue
             if not(-34<a<-1 and -75<b<-30):invalid+=1;continue
             road=' '.join(filter(None,[field(row,'NOM_TIPO_SEGLOGR','NOM_TIP_SEGLOGR','TIP_LOG','TIPO_LOGRADOURO'),field(row,'NOM_TITULO_SEGLOGR'),street]))
-            item=[road,number,field(row,'DSC_LOCALIDADE','NOM_BAIRRO','BAIRRO'),field(row,'CEP'),round(a,6),round(b,6),field(row,'NV_GEO_COORD')]
-            key=(road.casefold(),number,a,b)
+            modifier=field(row,'DSC_MODIFICADOR')
+            details=[] if modifier in ('','SN') else [modifier]
+            for i in range(1,6):
+                detail=' '.join(filter(None,[field(row,f'NOM_COMP_ELEM{i}'),field(row,f'VAL_COMP_ELEM{i}')]))
+                if detail and detail not in details:details.append(detail)
+            item=[road,number if number not in ('','0') else None,field(row,'DSC_LOCALIDADE','NOM_BAIRRO','BAIRRO'),field(row,'CEP'),round(a,6),round(b,6),field(row,'NV_GEO_COORD'),' · '.join(details)]
+            key=tuple(item)
             if key in seen:continue
             seen.add(key);rows.append(item)
 path=pathlib.Path('data/cnefe')/(code+'.json.gz');path.parent.mkdir(parents=True,exist_ok=True)
-path.write_bytes(gzip.compress(json.dumps({'municipio':code,'fonte':'IBGE CNEFE Censo 2022','columns':['rua','numero','bairro','cep','lat','lon','nivel_geocodificacao'],'rows':rows},ensure_ascii=False,separators=(',',':')).encode('utf-8'),mtime=0))
-print('Gravado',path,'registros',len(rows),'descartados/incompletos',invalid)
+path.write_bytes(gzip.compress(json.dumps({'municipio':code,'fonte':'IBGE CNEFE Censo 2022','columns':['rua','numero','bairro','cep','lat','lon','nivel_geocodificacao','complemento'],'rows':rows},ensure_ascii=False,separators=(',',':')).encode('utf-8'),mtime=0))
+print('Gravado',path,'pontos distintos',len(rows),'linhas lidas',reader.line_num-1,'incompletos',invalid)
