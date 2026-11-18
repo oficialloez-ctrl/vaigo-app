@@ -205,9 +205,33 @@ html[data-theme="dark"] :is(.map-badge,.map-control,.map-tip,.map-fallback div,.
 html[data-theme="dark"] .map-fallback{background:#19241d}
 html[data-theme="dark"] :is(.linkish,.address-clear,.stat-small,.suggestion-hint,.v-sub,.v-price small,.field label,.note,.tab-bar button,.section-title small,.map-badge small,.route-label,.status){color:#c4d2c8}
 html[data-theme="dark"] :is(.brand-point,.route-rail::before,.route-rail::after){background:#92e4aa}
-html[data-theme="dark"] .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.88) saturate(.65)}
+
 html[data-theme="dark"] .leaflet-overlay-pane path{stroke:#8cf4a5}
 html[data-theme="dark"] .leaflet-container{background:#222a26}
+    #showVehicles{display:flex;align-items:center;gap:.45em;background:none;border:0;color:inherit;font:inherit;letter-spacing:inherit;text-align:left;padding:0}
+    #showVehicles span{color:#128555;font-size:.75em}
+    .panel-top,.panel-body{border:1px solid var(--line)}
+    .address-search{border:1px solid var(--line);border-radius:12px}
+    .vehicle{border-radius:14px}
+    .vehicle.selected,html[data-theme="dark"] .vehicle.selected{border-color:#289c68!important}
+    .vehicle.selected .car-picture{border-radius:10px;background:#25985c19}
+    .pin-you{background:#148256}
+    .pin-dest{border-radius:50% 50% 50% 5px;background:#165b42}
+    #map .leaflet-overlay-pane .trip-line{stroke:#168057}
+    html[data-theme="dark"] #map .trip-line{stroke:#75eeb0}
+    html[data-theme="dark"] #map.fallback-tiles .leaflet-tile-pane{filter:grayscale(.7) brightness(.8)}
+    .mobile-collapse-btn{letter-spacing:.01em}
+    @media(max-width:810px){
+      .panel-top,.panel-body{border-radius:20px;box-shadow:0 6px 28px #14291f30}
+      .panel-top{padding:12px 14px}
+      .brand-row{margin-bottom:8px}
+      .address-search input{font-size:16px}
+      .panel-body:not(.is-collapsed){max-height:46dvh}
+      .mobile-collapse-btn{width:auto;margin:0 0 8px auto;padding:5px 10px;font-size:11px}
+      .panel-body .mobile-collapse-btn,.panel-top.is-collapsed .mobile-collapse-btn{display:block;width:100%;margin:0 0 7px}
+      .panel-body.is-collapsed .mobile-collapse-btn,.panel-top.is-collapsed .mobile-collapse-btn{margin:0}
+      #vaigoTools{margin-top:16px}
+    }
   </style>
 </head>
 <body>
@@ -223,10 +247,10 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
   <div class="app">
     <aside class="sidebar" aria-label="Planejamento da corrida">
       <div class="sidebar-inner">
-        <div class="panel-top"><button type="button" id="topPanelToggle" class="mobile-collapse-btn" aria-expanded="true">▴ Recolher busca e ver mapa</button>
-          <div class="brand-row"><div class="brand" aria-label="ZECA"><img src="/assets/zeca-icon.svg" alt="" style="width:37px;height:37px;border-radius:9px;margin-right:3px">ZECA</div><div style="display:flex;align-items:center;gap:9px"><div class="theme-switch" role="group" aria-label="Tema"><button type="button" id="lightTheme" aria-pressed="true">☀ Claro</button><button type="button" id="darkTheme" aria-pressed="false">☾ Escuro</button></div><span class="demo-chip">SIMULAÇÃO V9</span><button type="button" class="profile-dot" id="settingsShortcut" aria-label="Abrir administração de teste"><svg class="ui-icon"><use href="#ico-settings"/></svg></button></div></div>
-          <h1>Para onde vamos?</h1>
-          <p class="description">Sua próxima viagem começa aqui. Calcule o preço antes de sair.</p>
+        <div class="panel-top"><button type="button" id="topPanelToggle" class="mobile-collapse-btn" aria-expanded="true">Recolher busca</button>
+          <div class="brand-row"><div class="brand" aria-label="ZECA"><img src="/assets/zeca-icon.svg" alt="" style="width:37px;height:37px;border-radius:9px;margin-right:3px">ZECA</div><div style="display:flex;align-items:center;gap:9px"><div class="theme-switch" role="group" aria-label="Tema"><button type="button" id="lightTheme" aria-pressed="true">☀ Claro</button><button type="button" id="darkTheme" aria-pressed="false">☾ Escuro</button></div><span class="demo-chip">Simulador</span><button type="button" class="profile-dot" id="settingsShortcut" aria-label="Abrir administração de teste"><svg class="ui-icon"><use href="#ico-settings"/></svg></button></div></div>
+          <h1><button type="button" id="showVehicles" aria-controls="vehicleList">Para onde vamos? <span aria-hidden="true">↗</span></button></h1>
+          
           <div class="inputs">
             <span class="route-rail"></span>
             <div class="address-row">
@@ -252,7 +276,7 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
 <button type="button" id="vaigoConfirmHouse" style="padding:9px;border-radius:8px;border:1px solid #b5d6bb;background:#ecf7ee">✓ Confirmar entrada da residência</button>
 <button type="button" id="vaigoDrivers" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">🚘 Motoristas de teste</button>
 <div id="vaigoToolsMsg" aria-live="polite" style="flex-basis:100%;font-size:11px;color:#666">Números não confirmados devem ser conferidos no mapa. Motoristas são simulados.</div></div>
-<div class="panel-body is-collapsed"><button type="button" id="bottomPanelToggle" class="mobile-collapse-btn" aria-expanded="false">▾ Ver opções de corrida e ferramentas</button>
+<div class="panel-body is-collapsed"><button type="button" id="bottomPanelToggle" class="mobile-collapse-btn" aria-expanded="false">Opções de carro</button>
           <div class="tab-bar" role="tablist" aria-label="Painéis"><button id="passengerTab" role="tab" aria-selected="true" class="active">Passageiro</button><button id="financeTab" role="tab" aria-selected="false">Motorista</button><button id="adminTab" role="tab" aria-selected="false">ADM</button></div>
           <section id="passengerPanel" role="tabpanel" aria-labelledby="passengerTab">
             <div class="section-title"><h2>Escolha uma viagem</h2><small>Valores estimados</small></div>
@@ -337,7 +361,7 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
     function renderVehicles() {
       const html=Object.entries(defs).map(([id,v])=>{
         const c=calc(id);
-        return `<button class="vehicle ${state.selected===id?'selected':''}" type="button" data-vehicle="${id}" aria-pressed="${state.selected===id}"><span class="car-picture">${svgCar(v.silhouette)}</span><span><span class="v-name">${v.name}</span><span class="v-sub">${v.sub}</span></span><span class="v-price">${money(c.fare)}<small>estimativa</small></span></button>`;
+        return `<button class="vehicle ${state.selected===id?'selected':''}" type="button" data-vehicle="${id}" aria-pressed="${state.selected===id}"><span class="car-picture">${svgCar(v.silhouette)}</span><span><span class="v-name">${v.name}</span><span class="v-sub">${v.sub}</span></span><span class="v-price">${state.originReady&&state.dest?money(c.fare):'—'}<small>${state.originReady&&state.dest?'estimativa':'aguarda trajeto'}</small></span></button>`;
       }).join('');
       $('vehicleList').innerHTML=html;
       document.querySelectorAll('[data-vehicle]').forEach(b=>b.addEventListener('click',()=>{if(state.running)return;state.selected=b.dataset.vehicle;render();}));
@@ -362,7 +386,7 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
       $('fuelCost').textContent='− '+money(c.fuel);
       $('driverNet').textContent=money(c.driverNet);
       const stage=state.rideStage;
-      $('requestButtonLabel').textContent=stage==='idle'?`Solicitar corrida · ${money(c.fare)}`:stage==='searching'?'Cancelar solicitação':stage==='accepted'?'Cancelar (simulação)':stage==='driving'?'Viagem em andamento':'Concluída';
+      $('requestButtonLabel').textContent=stage==='idle'?(state.originReady&&state.dest?`Solicitar corrida · ${money(c.fare)}`:'Informe embarque e destino'):stage==='searching'?'Cancelar solicitação':stage==='accepted'?'Cancelar (simulação)':stage==='driving'?'Viagem em andamento':'Concluída';
       $('requestButton').disabled=stage==='driving';
       $('rideHeadline').textContent=stage==='searching'?'Buscando motorista virtual':stage==='accepted'?'Motorista virtual aceitou':stage==='driving'?'Corrida simulada em andamento':'Corrida de demonstração';
       $('rideProgressLabel').textContent=stage==='searching'?'Abra “Motorista e app” para aceitar a chamada.':stage==='accepted'?'No painel do motorista, clique em “Iniciar corrida”.':stage==='driving'?`Motorista virtual percorreu ${Math.round(state.rideProgress*100)}% da rota.`:'';
@@ -398,30 +422,30 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
     function initMap() {
       if(!window.L) { $('mapFallback').style.display='flex'; $('mapBadgeTitle').textContent='Calculadora disponível'; return; }
       state.map=L.map('map',{zoomControl:false,scrollWheelZoom:true}).setView([state.origin.lat,state.origin.lon],13);
-      // Basemap for prototype testing: Esri street map. No secret is embedded.
-      // If unavailable, try the humanitarian OSM layer as a fallback.
-      const providers=[
-        {url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',options:{maxZoom:19,attribution:'&copy; OpenStreetMap contributors'}},
-         {url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',options:{maxZoom:19,attribution:'Tiles &copy; Esri, HERE, Garmin, USGS and contributors'}},
-        {url:'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',options:{subdomains:'abc',maxZoom:19,attribution:'&copy; OpenStreetMap contributors, tiles by HOT'}}
-      ];
-      let providerIndex=0, failedTiles=0, loadedTiles=0, switching=false;
-      function addTiles(){
-        const spec=providers[providerIndex];
-        const layer=L.tileLayer(spec.url,spec.options).addTo(state.map);
-        layer.on('tileload',()=>{loadedTiles++;failedTiles=0;});
-        layer.on('tileerror',()=>{
-          failedTiles++;
-          if(failedTiles>=5 && loadedTiles===0 && !switching){
-            switching=true;
-            if(providerIndex+1<providers.length){
-              state.map.removeLayer(layer);providerIndex++;failedTiles=0;loadedTiles=0;switching=false;
-              toast('Alterando servidor do mapa automaticamente...');addTiles();
-            }else toast('Os servidores de mapas estão indisponíveis. GPS e tarifas continuam funcionando.');
-          }
+      let activeLayer;
+      function applyBasemap(){
+        if(activeLayer)state.map.removeLayer(activeLayer);
+        const dark=document.documentElement.dataset.theme==='dark';
+        const style=dark?'dark_all':'rastertiles/voyager';
+        const retina=window.devicePixelRatio>1?'@2x':'';
+        const osm='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+        const primary=L.tileLayer('https://basemaps.cartocdn.com/'+style+'/{z}/{x}/{y}'+retina+'.png',{
+          maxZoom:20, attribution:osm+' &copy; <a href="https://carto.com/attributions">CARTO</a>'
         });
+        activeLayer=primary;
+        $('map').classList.remove('fallback-tiles');
+        let failures=0;
+        primary.on('tileload',()=>{failures=0;});
+        primary.on('tileerror',()=>{
+          if(++failures<3||activeLayer!==primary)return;
+          state.map.removeLayer(primary);
+          $('map').classList.add('fallback-tiles');
+          activeLayer=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxNativeZoom:19,maxZoom:20,attribution:osm}).addTo(state.map);
+        });
+        primary.addTo(state.map);
       }
-      addTiles();
+      state.applyBasemap=applyBasemap;
+      applyBasemap();
       state.startMarker=L.marker([state.origin.lat,state.origin.lon],{icon:leafIcon('you'),zIndexOffset:100,draggable:true}).addTo(state.map);
       state.startMarker.on('dragend',()=>{if(state.running)return;const p=state.startMarker.getLatLng();chooseOrigin({name:'Embarque ajustado no mapa',lat:p.lat,lon:p.lng},'manual');vaigoMessage('Ponto de embarque corrigido no mapa.');});
       state.map.on('click',evt=>{
@@ -434,14 +458,23 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
       const watcher = new ResizeObserver(()=>state.map?.invalidateSize());watcher.observe($('map'));
       setTimeout(()=>state.map?.invalidateSize(),300);
     }
-    function fitMap() { if(!state.map)return;const coords=[[state.origin.lat,state.origin.lon]];if(state.dest) coords.push([state.dest.lat,state.dest.lon]);if(coords.length>1)state.map.fitBounds(coords,{padding:[80,80],maxZoom:15});else state.map.setView(coords[0],14); }
+    function fitMap(){
+      if(!state.map)return;
+      if(!state.dest){state.map.setView([state.origin.lat,state.origin.lon],14);return;}
+      const coords=state.route?.coords||[[state.origin.lat,state.origin.lon],[state.dest.lat,state.dest.lon]];
+      const size=state.map.getSize();
+      const mobile=window.matchMedia('(max-width:810px)').matches;
+      const top=mobile?Math.min(size.y*.4,document.querySelector('.panel-top').getBoundingClientRect().bottom+10):45;
+      const bottom=mobile?Math.min(size.y*.46,size.y-document.querySelector('.panel-body').getBoundingClientRect().top+10):45;
+      state.map.fitBounds(coords,{paddingTopLeft:[28,top],paddingBottomRight:[28,bottom],maxZoom:16});
+    }
     function updateMarkers() {
       if(!state.map)return;
       state.startMarker.setLatLng([state.origin.lat,state.origin.lon]);
-      if(state.dest) {if(!state.destMarker){state.destMarker=L.marker([state.dest.lat,state.dest.lon],{icon:leafIcon('dest'),draggable:true}).addTo(state.map);state.destMarker.on('dragend',()=>{if(state.running)return;const p=state.destMarker.getLatLng();chooseDestination({name:state.dest?.name||'Destino ajustado no mapa',addressHint:state.dest?.addressHint||state.dest?.hint,enteredAddress:state.dest?.enteredAddress||$('destinationInput').value,requestedNumber:state.dest?.requestedNumber,numberRequested:!!state.dest?.numberRequested,lat:p.lat,lon:p.lng,exactNumber:false});vaigoMessage('Marcador posicionado. Clique em Confirmar entrada da residência para usar esse ponto como destino manual.');});}else state.destMarker.setLatLng([state.dest.lat,state.dest.lon]);}
+      if(state.dest) {if(!state.destMarker){state.destMarker=L.marker([state.dest.lat,state.dest.lon],{icon:leafIcon('dest'),draggable:true}).addTo(state.map);state.destMarker.on('dragend',()=>{if(state.running)return;const p=state.destMarker.getLatLng();chooseDestination({name:state.dest?.name||'Destino ajustado no mapa',addressHint:state.dest?.addressHint||state.dest?.hint,enteredAddress:state.dest?.enteredAddress||$('destinationInput').value,requestedNumber:state.dest?.requestedNumber,numberRequested:!!state.dest?.numberRequested,lat:p.lat,lon:p.lng,exactNumber:false},false);vaigoMessage('Marcador posicionado. Clique em Confirmar entrada da residência para usar esse ponto como destino manual.');});}else state.destMarker.setLatLng([state.dest.lat,state.dest.lon]);}
       else if(state.destMarker){state.map.removeLayer(state.destMarker);state.destMarker=null;}
       if(state.routeLine){state.map.removeLayer(state.routeLine);state.routeLine=null;}
-      if(state.dest && state.originReady) {const coords=state.route?.coords || [[state.origin.lat,state.origin.lon],[state.dest.lat,state.dest.lon]];state.routeLine=L.polyline(coords,{color:'#121212',weight:6,opacity:.90,lineCap:'round',lineJoin:'round',dashArray:state.route?'':'6,10'}).addTo(state.map);}
+      if(state.dest && state.originReady) {const coords=state.route?.coords || [[state.origin.lat,state.origin.lon],[state.dest.lat,state.dest.lon]];state.routeLine=L.polyline(coords,{className:'trip-line',color:'#168057',weight:4,opacity:.90,lineCap:'round',lineJoin:'round',dashArray:state.route?'':'6,10'}).addTo(state.map);}
       fitMap();
     }
     let routingSeq=0, activeRouteController=null;
@@ -487,7 +520,7 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
         }).slice(0,5);
       }catch(e){return [];}
     }
-    function chooseDestination(p){
+    function chooseDestination(p,openOptions=true){
       if(state.running)return;
       state.dest={...p};p=state.dest;
       const entered=$('destinationInput').value.trim();
@@ -495,6 +528,7 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
       if(requestedNumber&&!p.exactNumber&&!p.manualVerified){p.numberRequested=true;p.requestedNumber=requestedNumber;p.enteredAddress=entered;}
       $('destinationInput').value=p.enteredAddress||p.name;
       hideSuggestions();
+      if(openOptions){$('destinationInput').blur();showCarOptions(state.originReady);}
       getRoute();
       toast('Destino selecionado. Calculando estimativa.');if(p.manualVerified)vaigoMessage('Entrada confirmada neste aparelho.');else if(p.exactNumber)vaigoMessage('Número encontrado. Para conferir a entrada, toque em Ver entrada no mapa.');else if(p.numberRequested)vaigoMessage('⚠️ Número não encontrado na base. Arraste o pino de destino até a entrada correta e clique em Confirmar entrada da residência.');else vaigoMessage('Destino escolhido. Você pode arrastar os marcadores para refinar os pontos.');
     }
@@ -657,7 +691,7 @@ function bindSearch(id,field){
         else state.dest=null;
         getRoute();
         const query=input.value;state.debounce=setTimeout(()=>searchAddress(query,field),500);});
-      input.addEventListener('focus',()=>{hideSuggestions();state.searchField=field;if(!state.running && input.value.length>=3 && input.value!=='Minha localização atual')searchAddress(input.value,field);});
+      input.addEventListener('focus',()=>{hideSuggestions();state.searchField=field;if(field==='destination'&&!state.running)showCarOptions(false);if(!state.running && input.value.length>=3 && input.value!=='Minha localização atual')searchAddress(input.value,field);});
       input.addEventListener('keydown',e=>{if(e.key==='Escape')hideSuggestions();if(e.key==='Enter'){e.preventDefault();const first=$('suggestions').querySelector('[data-suggest]');if(first)first.click();else manualAddressSearch(field);}});
     }
     $('zoomHouse').addEventListener('click',()=>{
@@ -741,7 +775,7 @@ $('findAddressButton').addEventListener('click',()=>manualAddressSearch('destina
       state.running=false;state.rideStage='idle';state.rideProgress=0;state.lockedFare=null;
       render();toast(`Corrida simulada concluída · passageiro ${money(c.fare)} · motorista ${money(c.driverNet)} após gasolina.`);
     }
-    function setZecaTheme(theme){const t=theme==='dark'?'dark':'light';document.documentElement.dataset.theme=t;$('lightTheme').setAttribute('aria-pressed',String(t==='light'));$('darkTheme').setAttribute('aria-pressed',String(t==='dark'));try{localStorage.setItem('zeca_theme',t)}catch(e){}}
+    function setZecaTheme(theme){const t=theme==='dark'?'dark':'light';const changed=document.documentElement.dataset.theme!==t;document.documentElement.dataset.theme=t;if(changed)state.applyBasemap?.();$('lightTheme').setAttribute('aria-pressed',String(t==='light'));$('darkTheme').setAttribute('aria-pressed',String(t==='dark'));try{localStorage.setItem('zeca_theme',t)}catch(e){}}
     let savedTheme='light';try{savedTheme=localStorage.getItem('zeca_theme')||'light'}catch(e){}
     setZecaTheme(savedTheme);
     $('lightTheme').addEventListener('click',()=>setZecaTheme('light'));
@@ -792,9 +826,19 @@ $('findAddressButton').addEventListener('click',()=>manualAddressSearch('destina
      function toggleMobilePanel(panel,button){
        const collapsed=panel.classList.toggle('is-collapsed');
        button.setAttribute('aria-expanded',String(!collapsed));
-       button.textContent=panel===topPanel?(collapsed?'▾ Mostrar pesquisa de endereços':'▴ Recolher busca e ver mapa'):(collapsed?'▾ Ver opções de corrida e ferramentas':'▴ Recolher opções e ver mapa');
+       button.textContent=panel===topPanel?(collapsed?'Editar trajeto':'Recolher busca'):(collapsed?'Opções de carro':'Recolher opções');
        if(state.map)setTimeout(()=>state.map.invalidateSize(),100);
      }
+     function showCarOptions(collapseSearch){
+       if(state.running)return;
+       setTab('passenger');
+       if(window.matchMedia('(max-width:810px)').matches){
+         if(bottomPanel.classList.contains('is-collapsed'))toggleMobilePanel(bottomPanel,bottomToggle);
+         if(collapseSearch && !topPanel.classList.contains('is-collapsed'))toggleMobilePanel(topPanel,topToggle);
+       }
+       bottomPanel.scrollTop=0;
+     }
+     $('showVehicles').addEventListener('click',()=>showCarOptions(false));
      topToggle.addEventListener('click',()=>toggleMobilePanel(topPanel,topToggle));
      bottomToggle.addEventListener('click',()=>toggleMobilePanel(bottomPanel,bottomToggle));
      if(window.innerWidth>810)bottomPanel.classList.remove('is-collapsed');
@@ -807,7 +851,7 @@ $('findAddressButton').addEventListener('click',()=>manualAddressSearch('destina
     const sidebarInner = document.querySelector('.sidebar-inner');
     function placeToolsBar() {
       if (mobileLayout.matches) {
-        if (toolsBar.parentElement !== lowerPanel) lowerPanel.prepend(toolsBar);
+        if (toolsBar.parentElement !== lowerPanel) lowerPanel.append(toolsBar);
       } else if (toolsBar.parentElement !== sidebarInner) {
         sidebarInner.insertBefore(toolsBar, lowerPanel);
       }
