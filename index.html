@@ -292,12 +292,13 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
             <div class="section-title"><h2>Escolha uma viagem</h2><small>Valores estimados</small></div>
             <div class="vehicle-list" id="vehicleList"></div>
             <div class="route-stats"><svg class="ui-icon"><use href="#ico-route"/></svg><span id="tripDistance">7,2 km</span><span class="sep"></span><span id="tripDuration">18 min</span><span class="route-label" id="routeMode">Exemplo</span></div>
-            <div id="rideBanner" class="trip-banner hidden"><strong id="rideHeadline">Solicitação em andamento</strong><p id="rideProgressLabel">Motorista virtual a caminho.</p><div class="progress"><span id="rideProgress"></span></div></div>
+            <div class="field" id="phoneField"><label for="passengerPhone">Telefone para o motorista ligar (opcional)</label><input type="tel" inputmode="tel" id="passengerPhone" placeholder="DDD e número" maxlength="24"></div>
+            <div aria-live="polite" id="rideBanner" class="trip-banner hidden"><strong id="rideHeadline">Solicitação em andamento</strong><p id="rideProgressLabel">Motorista virtual a caminho.</p><div class="progress"><span id="rideProgress"></span></div></div>
             <button class="btn-primary" id="requestButton"><span id="requestButtonLabel">Simular corrida · R$ 28,04</span><svg class="ui-icon"><use href="#ico-arrow"/></svg></button>
             <p class="note">Demonstração independente. Não solicita motoristas nem processa pagamentos reais. Com destino selecionado, a distância é calculada por rota quando o serviço de mapas está disponível.</p>
           </section>
           <section id="financePanel" class="hidden" role="tabpanel" aria-labelledby="financeTab">
-            <div id="driverRequest" class="fare-card" style="border:1px solid #dedede"><strong id="driverStatus">Painel do motorista · disponível</strong><p id="driverRequestInfo" class="small-info">Aguardando solicitação simulada do passageiro.</p><button id="driverAction" class="btn-primary" style="margin-top:9px;display:none">Aceitar corrida</button></div><div class="fare-card" style="margin-top:12px">
+            <div id="driverRequest" class="fare-card" style="border:1px solid #dedede"><strong id="driverStatus">Painel do motorista · disponível</strong><p id="driverRequestInfo" class="small-info">Aguardando solicitação simulada do passageiro.</p><a hidden id="callPassenger">Ligar ao passageiro</a><button id="driverAction" class="btn-primary" style="margin-top:9px;display:none">Aceitar corrida</button></div><div class="fare-card" style="margin-top:12px">
   <div class="stat-small">Valor a receber pela viagem (simulação)</div>
   <div class="money-big green" id="driverOfferAmount">R$ 21,03</div>
   <div id="driverOfferRoute" class="small-info">Aguardando rota · Distância e tempo estimados</div>
@@ -396,14 +397,18 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
       $('fuelCost').textContent='− '+money(c.fuel);
       $('driverNet').textContent=money(c.driverNet);
       const stage=state.rideStage;
-      $('requestButtonLabel').textContent=stage==='idle'?(state.originReady&&state.dest?`Solicitar corrida · ${money(c.fare)}`:'Informe embarque e destino'):stage==='searching'?'Cancelar solicitação':stage==='accepted'?'Cancelar (simulação)':stage==='driving'?'Viagem em andamento':'Concluída';
+      $('phoneField').hidden=state.running;
+      const call=$('callPassenger');
+      call.hidden=!state.phone || !['accepted','arrived','driving'].includes(stage);
+      if(call.hidden)call.removeAttribute('href');else call.href='tel:'+state.phone;
+      $('requestButtonLabel').textContent=stage==='idle'?(state.originReady&&state.dest?`Solicitar corrida · ${money(c.fare)}`:'Informe embarque e destino'):stage==='searching'?'Cancelar solicitação':['accepted','arrived'].includes(stage)?'Cancelar (simulação)':stage==='driving'?'Viagem em andamento':'Concluída';
       $('requestButton').disabled=stage==='driving';
-      $('rideHeadline').textContent=stage==='searching'?'Buscando motorista virtual':stage==='accepted'?'Motorista virtual aceitou':stage==='driving'?'Corrida simulada em andamento':'Corrida de demonstração';
-      $('rideProgressLabel').textContent=stage==='searching'?'Abra “Motorista e app” para aceitar a chamada.':stage==='accepted'?'No painel do motorista, clique em “Iniciar corrida”.':stage==='driving'?`Motorista virtual percorreu ${Math.round(state.rideProgress*100)}% da rota.`:'';
-      $('driverStatus').textContent=stage==='idle'?'Painel do motorista · disponível':stage==='searching'?'Nova solicitação de corrida':stage==='accepted'?'Corrida aceita':stage==='driving'?'Passageiro em viagem':'Disponível';
+      $('rideHeadline').textContent=stage==='searching'?'Buscando motorista virtual':stage==='accepted'?'Motorista a caminho':stage==='arrived'?'Seu motorista chegou ao embarque':stage==='driving'?'Corrida simulada em andamento':'Corrida de demonstração';
+      $('rideProgressLabel').textContent=stage==='searching'?'Abra “Motorista e app” para aceitar a chamada.':stage==='accepted'?'Acompanhe a aproximação simulada no mapa.':stage==='arrived'?'Encontre o motorista no ponto de embarque.':stage==='driving'?`Motorista virtual percorreu ${Math.round(state.rideProgress*100)}% da rota.`:'';
+      $('driverStatus').textContent=stage==='idle'?'Painel do motorista · disponível':stage==='searching'?'Nova solicitação de corrida':stage==='accepted'?'A caminho do embarque':stage==='arrived'?'Aguardando passageiro':stage==='driving'?'Passageiro em viagem':'Disponível';
       $('driverRequestInfo').textContent=stage==='idle'?'Aguardando solicitação simulada do passageiro.':`${defs[state.selected].name} · ${state.distance.toFixed(1).replace('.',',')} km · ${Math.round(state.duration)} min · Receber: ${money(state.lockedFare?.driverGross??c.driverGross)}`;
-      $('driverAction').style.display=stage==='searching'||stage==='accepted'||stage==='driving'?'flex':'none';
-      $('driverAction').textContent=stage==='searching'?'Aceitar corrida':stage==='accepted'?'Iniciar corrida':stage==='driving'?'Concluir corrida':'';
+      $('driverAction').style.display=stage!=='idle'?'flex':'none';
+      $('driverAction').textContent=stage==='searching'?'Aceitar corrida':stage==='accepted'?'Cheguei':stage==='arrived'?'Iniciar corrida':stage==='driving'?'Concluir corrida':'';
       $('rideProgress').style.width=(state.rideProgress*100).toFixed(1)+'%';
       $('originInput').readOnly=state.running;
       $('destinationInput').readOnly=state.running;
@@ -755,22 +760,46 @@ $('findAddressButton').addEventListener('click',()=>manualAddressSearch('destina
       state.driverMarker=null;
     }
     function toggleRide(){
-      if(state.rideStage==='searching'||state.rideStage==='accepted'){
-        clearInterval(state.rideTimer);clearRideMarker();state.running=false;state.rideStage='idle';state.lockedFare=null;state.rideProgress=0;
+      if(['searching','accepted','arrived'].includes(state.rideStage)){
+        clearInterval(state.rideTimer);clearRideMarker();state.phone='';$('passengerPhone').value='';state.running=false;state.rideStage='idle';state.lockedFare=null;state.rideProgress=0;
         render();toast('Solicitação simulada cancelada.');return;
       }
       if(state.rideStage!=='idle')return;
       if(!state.originReady){toast('Selecione o embarque no mapa, na busca ou pelo GPS.');return;}
       if(!state.dest){toast('Selecione um destino antes de solicitar a corrida.');return;}
+      const phone=$('passengerPhone').value.trim().replace(/[() .-]/g,'');
+      if(phone && !/^(?:\+55)?[1-9]\d{9,10}$/.test(phone)){toast('Informe o telefone com DDD.');return;}
+      state.phone=phone && (phone.startsWith('+')?phone:'+55'+phone);
       ++routingSeq;activeRouteController?.abort();hideSuggestions();
       state.running=true;state.rideStage='searching';state.lockedFare=calc();state.rideProgress=0;
       setTab('passenger');render();toast('Solicitação simulada criada. Abra Motorista e app para aceitar.');
     }
     function driverAction(){
       if(state.rideStage==='searching'){
-        state.rideStage='accepted';render();toast('Motorista virtual aceitou o pedido.');return;
+        state.rideStage='accepted';
+        const pickup=[state.origin.lat,state.origin.lon];
+        const start=[pickup[0]+0.002,pickup[1]-0.002];
+        if(state.map){
+          state.driverMarker=L.marker(start,{icon:leafIcon('car')}).addTo(state.map);
+          state.map.fitBounds([start,pickup],{padding:[48,48],maxZoom:16});
+        }
+        const started=Date.now();
+        state.rideTimer=setInterval(()=>{
+          state.rideProgress=Math.min(1,(Date.now()-started)/15000);
+          state.driverMarker?.setLatLng(interpolateAlong([start,pickup],state.rideProgress));
+          if(state.rideProgress===1)clearInterval(state.rideTimer);
+          $('rideProgress').style.width=(100*state.rideProgress)+'%';
+        },500);
+        render();toast('Motorista a caminho do embarque.');return;
       }
       if(state.rideStage==='accepted'){
+        clearInterval(state.rideTimer);
+        state.driverMarker?.setLatLng([state.origin.lat,state.origin.lon]);
+        state.rideStage='arrived';state.rideProgress=1;
+        render();toast('Seu motorista chegou ao ponto de embarque.');return;
+      }
+      if(state.rideStage==='arrived'){
+        clearRideMarker();fitMap();
         state.rideStage='driving';state.rideProgress=0;
         const path=getPathCoords();
         if(path&&state.map)state.driverMarker=L.marker(path[0],{icon:leafIcon('car')}).addTo(state.map);
@@ -791,7 +820,7 @@ $('findAddressButton').addEventListener('click',()=>manualAddressSearch('destina
       const record={date:new Date().toLocaleDateString('pt-BR'),type:defs[state.selected].name,km:state.distance,fare:c.fare,driverNet:c.driverNet};
       state.history.unshift(record);state.history=state.history.slice(0,20);
       try{localStorage.setItem('vaigo_history',JSON.stringify(state.history));}catch(e){}
-      state.running=false;state.rideStage='idle';state.rideProgress=0;state.lockedFare=null;
+      state.phone='';$('passengerPhone').value='';state.running=false;state.rideStage='idle';state.rideProgress=0;state.lockedFare=null;
       render();toast(`Corrida simulada concluída · passageiro ${money(c.fare)} · motorista ${money(c.driverNet)} após gasolina.`);
     }
     function setZecaTheme(theme){const t=theme==='dark'?'dark':'light';const changed=document.documentElement.dataset.theme!==t;document.documentElement.dataset.theme=t;if(changed)state.applyBasemap?.();$('lightTheme').setAttribute('aria-pressed',String(t==='light'));$('darkTheme').setAttribute('aria-pressed',String(t==='dark'));try{localStorage.setItem('zeca_theme',t)}catch(e){}}
