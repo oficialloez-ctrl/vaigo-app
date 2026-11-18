@@ -2,7 +2,7 @@
 """Importa um município do CNEFE/IBGE para índice compacto de endereços ZECA.
 Uso: python scripts/import_cnefe.py 4108403 FRANCISCO_BELTRAO
 """
-import csv,io,json,sys,urllib.request,zipfile,pathlib,re,unicodedata
+import gzip,csv,io,json,sys,urllib.request,zipfile,pathlib,re,unicodedata
 code=sys.argv[1] if len(sys.argv)>1 else '4108403'
 name=sys.argv[2] if len(sys.argv)>2 else 'FRANCISCO_BELTRAO'
 url=('https://ftp.ibge.gov.br/Cadastro_Nacional_de_Enderecos_para_Fins_Estatisticos/'
@@ -26,15 +26,15 @@ with zipfile.ZipFile(io.BytesIO(blob)) as archive:
             street=field(row,'NOM_SEGLOGR','NOM_LOG','NOM_LOGRADOURO')
             number=field(row,'NUM_ENDERECO','NUM_LOG')
             lat=field(row,'LATITUDE');lon=field(row,'LONGITUDE')
-            if not street or not number or not lat or not lon:invalid+=1;continue
+            if not street or number in ('','0') or not lat or not lon:invalid+=1;continue
             try:a=float(lat.replace(',','.'));b=float(lon.replace(',','.'))
             except ValueError:invalid+=1;continue
             if not(-34<a<-1 and -75<b<-30):invalid+=1;continue
-            road=' '.join(filter(None,[field(row,'NOM_TIP_SEGLOGR','TIP_LOG','TIPO_LOGRADOURO'),street]))
+            road=' '.join(filter(None,[field(row,'NOM_TIPO_SEGLOGR','NOM_TIP_SEGLOGR','TIP_LOG','TIPO_LOGRADOURO'),field(row,'NOM_TITULO_SEGLOGR'),street]))
             item=[road,number,field(row,'DSC_LOCALIDADE','NOM_BAIRRO','BAIRRO'),field(row,'CEP'),round(a,6),round(b,6),field(row,'NV_GEO_COORD')]
             key=(road.casefold(),number,a,b)
             if key in seen:continue
             seen.add(key);rows.append(item)
-path=pathlib.Path('data/cnefe')/(code+'.json');path.parent.mkdir(parents=True,exist_ok=True)
-path.write_text(json.dumps({'municipio':code,'fonte':'IBGE CNEFE Censo 2022','columns':['rua','numero','bairro','cep','lat','lon','nivel_geocodificacao'],'rows':rows},ensure_ascii=False,separators=(',',':')),encoding='utf-8')
+path=pathlib.Path('data/cnefe')/(code+'.json.gz');path.parent.mkdir(parents=True,exist_ok=True)
+path.write_bytes(gzip.compress(json.dumps({'municipio':code,'fonte':'IBGE CNEFE Censo 2022','columns':['rua','numero','bairro','cep','lat','lon','nivel_geocodificacao'],'rows':rows},ensure_ascii=False,separators=(',',':')).encode('utf-8'),mtime=0))
 print('Gravado',path,'registros',len(rows),'descartados/incompletos',invalid)

@@ -198,6 +198,16 @@ html[data-theme="dark"] #vaigoTools button:hover {background:#344739!important;b
 html[data-theme="dark"] #vaigoTools #vaigoUseGPS,
 html[data-theme="dark"] #vaigoTools #vaigoConfirmHouse {background:#203b29!important;border-color:#418a53!important;color:#a9ffb7!important}
 html[data-theme="dark"] #vaigoTools #vaigoToolsMsg {color:#b7c9ba!important}
+@media(max-width:810px){
+  html[data-theme="dark"] .sidebar{background:transparent!important}
+}
+html[data-theme="dark"] :is(.map-badge,.map-control,.map-tip,.map-fallback div,.suggestion-icon){background:#263229;color:#edf5ed}
+html[data-theme="dark"] .map-fallback{background:#19241d}
+html[data-theme="dark"] :is(.linkish,.address-clear,.stat-small,.suggestion-hint,.v-sub,.v-price small,.field label,.note,.tab-bar button,.section-title small,.map-badge small,.route-label,.status){color:#c4d2c8}
+html[data-theme="dark"] :is(.brand-point,.route-rail::before,.route-rail::after){background:#92e4aa}
+html[data-theme="dark"] .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.88) saturate(.65)}
+html[data-theme="dark"] .leaflet-overlay-pane path{stroke:#8cf4a5}
+html[data-theme="dark"] .leaflet-container{background:#222a26}
   </style>
 </head>
 <body>
@@ -573,7 +583,7 @@ html[data-theme="dark"] #vaigoTools #vaigoToolsMsg {color:#b7c9ba!important}
         const url=new URL('/api/search',location.origin);url.searchParams.set('q',query);url.searchParams.set('mode','suggest');url.searchParams.set('lat',state.origin.lat);url.searchParams.set('lon',state.origin.lon);
         const response=await fetch(url,{signal:state.abort.signal});if(!response.ok)throw Error('Serviço de endereços indisponível');
         const data=await response.json();if(seq!==state.searchSeq)return;
-        const combined=[...localConfirmedAddresses(query),...(data.results||[]).map(p=>({...p,requestedNumber:data.requestedNumber}))];if(combined.length)renderAddressResults(combined,field,'Busca local');
+        const combined=[...(data.results||[]).filter(p=>p.exactNumber),...localConfirmedAddresses(query),...(data.results||[]).filter(p=>!p.exactNumber)].map(p=>({...p,requestedNumber:data.requestedNumber}));if(combined.length)renderAddressResults(combined,field,'Busca local');
         else showManualSearch(field,data.providerStatus==='unavailable'?'Serviços públicos temporariamente indisponíveis.':'Número ou rua não localizados. Pesquise somente a rua e ajuste o ponto no mapa.');
       }catch(err){if(err.name!=='AbortError'&&seq===state.searchSeq)showManualSearch(field,'Sugestões indisponíveis.');}
     }
@@ -587,7 +597,7 @@ html[data-theme="dark"] #vaigoTools #vaigoToolsMsg {color:#b7c9ba!important}
         const url=new URL('/api/search',location.origin);url.searchParams.set('q',query);url.searchParams.set('mode','address');url.searchParams.set('lat',state.origin.lat);url.searchParams.set('lon',state.origin.lon);
         const response=await fetch(url,{signal:state.abort.signal});if(!response.ok)throw Error('Não foi possível pesquisar');
         const data=await response.json();if(seq!==state.searchSeq)return;
-        const combined=[...localConfirmedAddresses(query),...(data.results||[]).map(p=>({...p,requestedNumber:data.requestedNumber}))];if(combined.length){renderAddressResults(combined,field,'Busca local');if(data.partial)vaigoMessage('Número residencial não confirmado. Escolha a rua e ajuste o pino no mapa antes de confirmar.');}else showManualSearch(field,data.providerStatus==='unavailable'?'Serviços de endereços indisponíveis. Tente novamente.':'Não encontrei esse número. Tente somente o nome da rua e confirme o local no mapa.');
+        const combined=[...(data.results||[]).filter(p=>p.exactNumber),...localConfirmedAddresses(query),...(data.results||[]).filter(p=>!p.exactNumber)].map(p=>({...p,requestedNumber:data.requestedNumber}));if(combined.length){renderAddressResults(combined,field,'Busca local');if(data.partial)vaigoMessage('Número residencial não confirmado. Escolha a rua e ajuste o pino no mapa antes de confirmar.');}else showManualSearch(field,data.providerStatus==='unavailable'?'Serviços de endereços indisponíveis. Tente novamente.':'Não encontrei esse número. Tente somente o nome da rua e confirme o local no mapa.');
       }catch(err){if(err.name!=='AbortError'&&seq===state.searchSeq)$('suggestions').innerHTML='<div class="small-info" style="padding:11px">Pesquisa indisponível. Verifique sua conexão e tente novamente.</div>';}
     }
     function showManualSearch(field,message='Sugestões automáticas indisponíveis.'){

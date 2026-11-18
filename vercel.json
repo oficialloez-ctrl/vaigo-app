@@ -2,7 +2,8 @@
   "version": 2,
   "functions": {
     "api/search.js": {
-      "maxDuration": 20
+      "maxDuration": 20,
+      "includeFiles": "data/cnefe/*.json.gz"
     }
   }
 }
