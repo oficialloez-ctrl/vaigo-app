@@ -427,10 +427,9 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
         if(activeLayer)state.map.removeLayer(activeLayer);
         const dark=document.documentElement.dataset.theme==='dark';
         const style=dark?'dark_all':'rastertiles/voyager';
-        const retina=window.devicePixelRatio>1?'@2x':'';
         const osm='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
-        const primary=L.tileLayer('https://basemaps.cartocdn.com/'+style+'/{z}/{x}/{y}'+retina+'.png',{
-          maxZoom:20, attribution:osm+' &copy; <a href="https://carto.com/attributions">CARTO</a>'
+        const primary=L.tileLayer('https://basemaps.cartocdn.com/'+style+'/{z}/{x}/{y}.png',{
+          detectRetina:true, maxZoom:20, attribution:osm+' &copy; <a href="https://carto.com/attributions">CARTO</a>'
         });
         activeLayer=primary;
         $('map').classList.remove('fallback-tiles');
