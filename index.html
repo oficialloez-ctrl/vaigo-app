@@ -288,8 +288,8 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
 <button type="button" id="vaigoUseGPS" style="padding:9px;border-radius:8px;border:1px solid #b5d6bb;background:#ecf7ee">◎ Usar GPS no embarque</button>
 <button type="button" id="zoomHouse" style="padding:9px;border:1px solid #bbb;border-radius:8px">Ver entrada no mapa</button>
 <button type="button" id="vaigoConfirmHouse" style="padding:9px;border-radius:8px;border:1px solid #b5d6bb;background:#ecf7ee">✓ Confirmar entrada da residência</button>
-<button type="button" id="vaigoDrivers" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">🚘 Motoristas de teste</button>
-<div id="vaigoToolsMsg" aria-live="polite" style="flex-basis:100%;font-size:11px;color:#666">Números não confirmados devem ser conferidos no mapa. Motoristas são simulados.</div></div>
+<button type="button" id="vaigoDrivers" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">🚘 Carros disponíveis</button>
+<div id="vaigoToolsMsg" aria-live="polite" style="flex-basis:100%;font-size:11px;color:#666">Números não confirmados devem ser conferidos no mapa. As corridas de demonstração são simuladas.</div></div>
 <div class="panel-body is-collapsed"><button type="button" id="bottomPanelToggle" class="mobile-collapse-btn" aria-expanded="false">Opções de carro</button>
           <div class="tab-bar" role="tablist" aria-label="Painéis"><button id="passengerTab" role="tab" aria-selected="true" class="active">Passageiro</button><button id="financeTab" role="tab" aria-selected="false">Motorista</button><button id="adminTab" role="tab" aria-selected="false">ADM</button></div>
           <section id="passengerPanel" role="tabpanel" aria-labelledby="passengerTab">
@@ -302,6 +302,7 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
             <p class="note">Demonstração independente. Não solicita motoristas nem processa pagamentos reais. Com destino selecionado, a distância é calculada por rota quando o serviço de mapas está disponível.</p>
           </section>
           <section id="financePanel" class="hidden" role="tabpanel" aria-labelledby="financeTab">
+            <div class="fare-card"><strong>Disponibilidade no mapa</strong><p class="small-info">Ao ficar disponível, você compartilha sua posição aproximada com passageiros próximos enquanto esta página estiver aberta e visível.</p><button type="button" class="btn-primary" id="liveGps">Ficar disponível</button><p id="liveGpsStatus" class="small-info" aria-live="polite">Você está offline.</p></div>
             <div id="driverRequest" class="fare-card" style="border:1px solid #dedede"><strong id="driverStatus">Painel do motorista · disponível</strong><p id="driverRequestInfo" class="small-info">Aguardando solicitação simulada do passageiro.</p><a hidden id="callPassenger">Ligar ao passageiro</a><button id="driverAction" class="btn-primary" style="margin-top:9px;display:none">Aceitar corrida</button></div><div class="fare-card" style="margin-top:12px">
   <div class="stat-small">Valor a receber pela viagem (simulação)</div>
   <div class="money-big green" id="driverOfferAmount">R$ 21,03</div>
@@ -475,7 +476,6 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
       }
       state.applyBasemap=()=>{};
       loadBasemap();
-      renderFleet();
       state.startMarker=L.marker([state.origin.lat,state.origin.lon],{icon:leafIcon('you'),zIndexOffset:100,draggable:true}).addTo(state.map);
       state.startMarker.on('dragend',()=>{if(state.running)return;const p=state.startMarker.getLatLng();chooseOrigin({name:'Embarque ajustado no mapa',lat:p.lat,lon:p.lng},'manual');vaigoMessage('Ponto de embarque corrigido no mapa.');});
       state.map.on('click',evt=>{
@@ -712,15 +712,7 @@ function fleetIcon(angle){
  return L.divIcon({className:'fleet-icon',html:'<span class="fleet-car" style="transform:rotate('+angle+'deg)"><i></i></span>',iconSize:[18,34],iconAnchor:[9,17]});
 }
 function renderFleet(){
- if(!state.map)return;
- for(const driver of state.demoDrivers){
-   if(!driver.marker)driver.marker=L.marker([driver.lat,driver.lon],{icon:fleetIcon(driver.angle),title:'Carro disponível · simulação'}).bindPopup('Carro disponível · simulação');
-   if(state.showFleet && driver!==state.assignedDriver)driver.marker.addTo(state.map);
-   else driver.marker.remove();
- }
- $('fleetStatus').hidden=!state.showFleet;
- $('fleetStatus').textContent=(state.demoDrivers.length-(state.assignedDriver?1:0))+' carros simulados disponíveis';
- $('vaigoDrivers').setAttribute('aria-pressed',String(state.showFleet));
+ if(typeof refreshLiveFleet==='function') refreshLiveFleet();
 }
 $('vaigoDrivers').addEventListener('click',()=>{state.showFleet=!state.showFleet;renderFleet();});
 
@@ -939,7 +931,84 @@ $('findAddressButton').addEventListener('click',()=>manualAddressSearch('destina
     render();
     window.addEventListener('pagehide',()=>{if(state.gpsWatch!==null)pauseGPS();});
     
+// Passenger map and opt-in GPS sharing use separate location requests.
+const liveMarkers = [];
+let fleetRequest = 0;
+async function refreshLiveFleet() {
+  if (!state.map) return;
+  const request = ++fleetRequest;
+  const badge = $('fleetStatus');
+  badge.hidden = !state.showFleet;
+  $('vaigoDrivers').setAttribute('aria-pressed',String(state.showFleet));
+  const clear = () => liveMarkers.splice(0).forEach(marker => marker.remove());
+  if (!state.showFleet) { clear(); return; }
+  const center = state.map.getCenter();
+  try {
+    const response = await fetch('/api/fleet?lat='+center.lat.toFixed(2)+'&lon='+center.lng.toFixed(2),{signal:AbortSignal.timeout(9000)});
+    if (!response.ok) throw Error();
+    const {drivers} = await response.json();
+    if (request !== fleetRequest) return;
+    clear();
+    for (const driver of drivers) {
+      const marker = L.marker([Number(driver.lat),Number(driver.lon)],{icon:fleetIcon(Number(driver.heading)),title:'Motorista disponível'}).bindPopup('Motorista disponível · posição aproximada').addTo(state.map);
+      liveMarkers.push(marker);
+    }
+    badge.textContent = drivers.length ? drivers.length+' disponível(is) nesta região' : 'Nenhum motorista disponível nesta região';
+  } catch {
+    if (request === fleetRequest) { clear(); badge.textContent='Disponibilidade temporariamente indisponível'; }
+  }
+}
+
+let driverSession=null;
+const gpsText = message => $('liveGpsStatus').textContent=message;
+async function sendPosition(body) {
+  const response=await fetch('/api/fleet',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),keepalive:true,signal:AbortSignal.timeout(10000)});
+  if (!response.ok) throw Error();
+}
+function stopDriver(message) {
+  const session=driverSession;
+  if (!session) return;
+  driverSession=null;
+  clearInterval(session.timer);
+  const offline=()=>sendPosition({token:session.token,offline:true}).then(refreshLiveFleet).catch(()=>{});
+  offline();
+  if(session.pending) session.pending.then(offline,offline);
+  $('liveGps').textContent='Ficar disponível';
+  gpsText(message);
+}
+function startDriver() {
+  if (driverSession) { stopDriver('Você está offline.'); return; }
+  if (!navigator.geolocation) { gpsText('GPS indisponível neste navegador.'); return; }
+  const token=Array.from(crypto.getRandomValues(new Uint8Array(32)),v=>v.toString(16).padStart(2,'0')).join('');
+  const session=driverSession={token,busy:false};
+  $('liveGps').textContent='Ficar offline';
+  gpsText('Aguardando permissão e sinal do GPS…');
+  function update() {
+    if(session.busy || session!==driverSession) return;
+    session.busy=true;
+    navigator.geolocation.getCurrentPosition(async position=>{
+      if(driverSession!==session) return;
+      try {
+        const {latitude:lat,longitude:lon,heading}=position.coords;
+        session.pending=sendPosition({token,lat,lon,heading});
+        await session.pending;
+        if(driverSession===session) { gpsText('Disponível · GPS atualizado às '+new Date().toLocaleTimeString('pt-BR')); refreshLiveFleet(); }
+      } catch { if(driverSession===session) stopDriver('Falha na conexão. Ative novamente para compartilhar.'); }
+      finally { session.busy=false; session.pending=null; }
+    },error=>{ if(driverSession===session) stopDriver(error.code===1?'Permita a localização no navegador para ficar disponível.':'Sem sinal de GPS. Tente novamente.'); },{enableHighAccuracy:true,maximumAge:0,timeout:15000});
+  }
+  session.timer=setInterval(update,12000);
+  update();
+}
+$('liveGps').addEventListener('click',startDriver);
+window.addEventListener('pagehide',()=>stopDriver('Você está offline.'));
+document.addEventListener('visibilitychange',()=>{if(document.hidden) stopDriver('Compartilhamento pausado. Toque para ficar disponível novamente.'); else refreshLiveFleet();});
+if(state.map) state.map.on('moveend',refreshLiveFleet);
+refreshLiveFleet();
+setInterval(()=>{if(!document.hidden)refreshLiveFleet();},12000);
+
   })();
   </script>
+
 </body>
 </html>
