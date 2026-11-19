@@ -242,6 +242,10 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
       .panel-body.is-collapsed .mobile-collapse-btn{font-size:17px;padding:12px}
       .map-pane .leaflet-control-attribution{position:fixed;bottom:94px;right:0}
     }
+    .fleet-car{display:block;position:relative;width:18px;height:34px;border-radius:7px 7px 6px 6px;border:1px solid #65707b;background:linear-gradient(90deg,#929aa2,#f9fafb 26%,#e1e5e9 75%,#939ba2);box-shadow:1px 2px 4px #1116}
+    .fleet-car i{position:absolute;inset:7px 2px 6px;background:linear-gradient(#27323b 0 28%,#c9cfd4 29% 74%,#36414b 75%);border-radius:4px;border-inline:1px solid #626973}
+    #fleetStatus{position:absolute;z-index:400;left:16px;bottom:75px;background:var(--white);color:var(--ink);border-radius:18px;padding:6px 10px;font-size:11px;font-weight:650;pointer-events:none}
+    @media(max-width:810px){#fleetStatus{top:16px;right:12px;left:auto;bottom:auto}}
   </style>
 </head>
 <body>
@@ -327,7 +331,7 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
       <div class="map-fallback" id="mapFallback"><div><strong>Mapa não carregado</strong><p>Verifique a conexão com a internet. A calculadora de tarifas continua disponível.</p></div></div>
       <div class="map-badge"><div class="badge-icon"><svg class="ui-icon"><use href="#ico-locate"/></svg></div><div><strong id="mapBadgeTitle">Sua cidade, sua corrida</strong><small id="mapBadgeSubtitle">Ative o GPS ou pesquise um destino</small></div></div>
       <div class="floating-map-ctrls"><button class="map-control" id="recenterButton" aria-label="Centralizar mapa na minha posição" title="Centralizar mapa"><svg class="ui-icon"><use href="#ico-locate"/></svg></button><button class="map-control" id="zoomInButton" aria-label="Aproximar mapa" title="Aproximar" style="font-size:25px;font-weight:400">+</button><button class="map-control" id="zoomOutButton" aria-label="Afastar mapa" title="Afastar" style="font-size:27px;font-weight:400">−</button></div>
-      <div class="map-tip" id="mapTip">Toque no mapa para marcar o destino <span aria-hidden="true">↗</span></div>
+      <span id="fleetStatus" hidden></span><div class="map-tip" id="mapTip">Toque no mapa para marcar o destino <span aria-hidden="true">↗</span></div>
     </main>
   </div>
   <div id="toast" role="status" aria-live="polite" class="toast"></div>
@@ -436,10 +440,11 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
     function leafIcon(kind) { const html=kind==='you'?'<div class="pin-you"></div>':kind==='dest'?'<div class="pin-dest">▣</div>':'<div class="pin-car">🚙</div>';return L.divIcon({html,iconSize:kind==='you'?[17,17]:kind==='dest'?[30,30]:[37,37],iconAnchor:kind==='you'?[9,9]:kind==='dest'?[15,25]:[18,18],className:''}); }
     function initMap() {
       if(!window.L) { $('mapFallback').style.display='flex'; $('mapBadgeTitle').textContent='Calculadora disponível'; return; }
-      state.map=L.map('map',{zoomControl:false,scrollWheelZoom:true}).setView([state.origin.lat,state.origin.lon],13);
+      state.map=L.map('map',{zoomControl:false,scrollWheelZoom:true}).setView([state.origin.lat,state.origin.lon],15);
       let activeLayer, tileDeadline;
       const osm='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
       const providers=[
+        {url:'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',attribution:osm+' · &copy; <a href="https://carto.com/attributions">CARTO</a>'},
         {url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',attribution:osm},
         {url:'https://tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',attribution:osm+' · Humanitarian OpenStreetMap Team'}
       ];
@@ -470,6 +475,7 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
       }
       state.applyBasemap=()=>{};
       loadBasemap();
+      renderFleet();
       state.startMarker=L.marker([state.origin.lat,state.origin.lon],{icon:leafIcon('you'),zIndexOffset:100,draggable:true}).addTo(state.map);
       state.startMarker.on('dragend',()=>{if(state.running)return;const p=state.startMarker.getLatLng();chooseOrigin({name:'Embarque ajustado no mapa',lat:p.lat,lon:p.lng},'manual');vaigoMessage('Ponto de embarque corrigido no mapa.');});
       state.map.on('click',evt=>{
@@ -668,7 +674,12 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
 // Ferramentas de localização e teste — dados locais, sem motoristas reais.
 state.favoritePlaces=[];
 try{const saved=JSON.parse(localStorage.getItem('vaigo_favorites_v1')||'[]');if(Array.isArray(saved))state.favoritePlaces=saved.filter(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lon)).slice(0,20)}catch(e){}
-state.pickupAdjust=false;state.demoDrivers=[];state.demoDriverTimer=null;
+state.pickupAdjust=false;state.demoDrivers=[
+ {lat:-26.079246,lon:-53.044253,angle:55},{lat:-26.075081,lon:-53.057338,angle:-32},
+ {lat:-26.085178,lon:-53.059193,angle:103},{lat:-26.070801,lon:-53.050213,angle:26},
+ {lat:-26.081938,lon:-53.048936,angle:68}
+];
+state.showFleet=true;
 $('vaigoUseGPS')?.addEventListener('click',()=>{
  if(state.running)return;
  if(!state.gps || !state.userLocation){vaigoMessage('GPS ainda não disponível. Clique no alvo ao lado da origem, autorize a localização e tente novamente.');if(state.gpsWatch===null)requestGPS();return;}
@@ -697,16 +708,21 @@ $('vaigoPinToggle')?.addEventListener('click',()=>{
  $('vaigoPinToggle').style.background=state.pickupAdjust?'#d8f2e4':'#fafafa';
  vaigoMessage(state.pickupAdjust?'Toque no mapa para ajustar o ponto de embarque. O marcador também pode ser arrastado.':'Ajuste do embarque desativado.');
 });
-function vaigoDemoDrivers(){
- if(!state.map)return;
- if(state.demoDriverTimer){clearInterval(state.demoDriverTimer);state.demoDriverTimer=null;for(const m of state.demoDrivers)state.map.removeLayer(m);state.demoDrivers=[];vaigoMessage('Motoristas de demonstração ocultados.');return;}
- const p=state.origin;
- const offsets=[[.004,.003],[-.003,.006],[.005,-.005]];
- state.demoDrivers=offsets.map((d,i)=>L.marker([p.lat+d[0],p.lon+d[1]],{icon:L.divIcon({html:'<span style="display:grid;place-items:center;background:#fff;border:2px solid #11854f;border-radius:50%;width:35px;height:35px;font-size:18px">🚘</span>',className:'',iconSize:[35,35]})}).bindPopup('Motorista fictício '+(i+1)+' · Apenas demonstração').addTo(state.map));
- state.demoDriverTimer=setInterval(()=>{state.demoDrivers.forEach((m,i)=>{const pos=m.getLatLng();m.setLatLng([pos.lat+Math.sin(Date.now()/4000+i)*0.00008,pos.lng+Math.cos(Date.now()/4000+i)*0.00008])})},3000);
- vaigoMessage('3 carros fictícios se movendo para testes. Não representam motoristas conectados.');
+function fleetIcon(angle){
+ return L.divIcon({className:'fleet-icon',html:'<span class="fleet-car" style="transform:rotate('+angle+'deg)"><i></i></span>',iconSize:[18,34],iconAnchor:[9,17]});
 }
-$('vaigoDrivers')?.addEventListener('click',vaigoDemoDrivers);
+function renderFleet(){
+ if(!state.map)return;
+ for(const driver of state.demoDrivers){
+   if(!driver.marker)driver.marker=L.marker([driver.lat,driver.lon],{icon:fleetIcon(driver.angle),title:'Carro disponível · simulação'}).bindPopup('Carro disponível · simulação');
+   if(state.showFleet && driver!==state.assignedDriver)driver.marker.addTo(state.map);
+   else driver.marker.remove();
+ }
+ $('fleetStatus').hidden=!state.showFleet;
+ $('fleetStatus').textContent=(state.demoDrivers.length-(state.assignedDriver?1:0))+' carros simulados disponíveis';
+ $('vaigoDrivers').setAttribute('aria-pressed',String(state.showFleet));
+}
+$('vaigoDrivers').addEventListener('click',()=>{state.showFleet=!state.showFleet;renderFleet();});
 
 function bindSearch(id,field){
       const input=$(id);
@@ -761,7 +777,7 @@ $('findAddressButton').addEventListener('click',()=>manualAddressSearch('destina
     }
     function toggleRide(){
       if(['searching','accepted','arrived'].includes(state.rideStage)){
-        clearInterval(state.rideTimer);clearRideMarker();state.phone='';$('passengerPhone').value='';state.running=false;state.rideStage='idle';state.lockedFare=null;state.rideProgress=0;
+        clearInterval(state.rideTimer);clearRideMarker();state.assignedDriver=null;renderFleet();state.phone='';$('passengerPhone').value='';state.running=false;state.rideStage='idle';state.lockedFare=null;state.rideProgress=0;
         render();toast('Solicitação simulada cancelada.');return;
       }
       if(state.rideStage!=='idle')return;
@@ -778,9 +794,11 @@ $('findAddressButton').addEventListener('click',()=>manualAddressSearch('destina
       if(state.rideStage==='searching'){
         state.rideStage='accepted';
         const pickup=[state.origin.lat,state.origin.lon];
-        const start=[pickup[0]+0.002,pickup[1]-0.002];
+        state.assignedDriver=state.demoDrivers.reduce((nearest,driver)=>haversine(driver,state.origin)<haversine(nearest,state.origin)?driver:nearest);
+        const start=[state.assignedDriver.lat,state.assignedDriver.lon];
+        renderFleet();
         if(state.map){
-          state.driverMarker=L.marker(start,{icon:leafIcon('car')}).addTo(state.map);
+          state.driverMarker=L.marker(start,{icon:fleetIcon(state.assignedDriver.angle)}).addTo(state.map);
           state.map.fitBounds([start,pickup],{padding:[48,48],maxZoom:16});
         }
         const started=Date.now();
@@ -802,7 +820,7 @@ $('findAddressButton').addEventListener('click',()=>manualAddressSearch('destina
         clearRideMarker();fitMap();
         state.rideStage='driving';state.rideProgress=0;
         const path=getPathCoords();
-        if(path&&state.map)state.driverMarker=L.marker(path[0],{icon:leafIcon('car')}).addTo(state.map);
+        if(path&&state.map)state.driverMarker=L.marker(path[0],{icon:fleetIcon(state.assignedDriver.angle)}).addTo(state.map);
         const started=Date.now();
         state.rideTimer=setInterval(()=>{
           state.rideProgress=Math.min(1,(Date.now()-started)/45000);
@@ -820,7 +838,7 @@ $('findAddressButton').addEventListener('click',()=>manualAddressSearch('destina
       const record={date:new Date().toLocaleDateString('pt-BR'),type:defs[state.selected].name,km:state.distance,fare:c.fare,driverNet:c.driverNet};
       state.history.unshift(record);state.history=state.history.slice(0,20);
       try{localStorage.setItem('vaigo_history',JSON.stringify(state.history));}catch(e){}
-      state.phone='';$('passengerPhone').value='';state.running=false;state.rideStage='idle';state.rideProgress=0;state.lockedFare=null;
+      state.assignedDriver=null;renderFleet();state.phone='';$('passengerPhone').value='';state.running=false;state.rideStage='idle';state.rideProgress=0;state.lockedFare=null;
       render();toast(`Corrida simulada concluída · passageiro ${money(c.fare)} · motorista ${money(c.driverNet)} após gasolina.`);
     }
     function setZecaTheme(theme){const t=theme==='dark'?'dark':'light';const changed=document.documentElement.dataset.theme!==t;document.documentElement.dataset.theme=t;if(changed)state.applyBasemap?.();$('lightTheme').setAttribute('aria-pressed',String(t==='light'));$('darkTheme').setAttribute('aria-pressed',String(t==='dark'));try{localStorage.setItem('zeca_theme',t)}catch(e){}}
