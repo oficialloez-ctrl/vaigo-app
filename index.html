@@ -251,6 +251,16 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
     @media(max-width:810px){#fleetStatus{top:16px;right:12px;left:auto;bottom:auto}}
       #tripTools summary{cursor:pointer;padding:12px 16px;font-weight:650;font-size:14px}
     #tripTools #vaigoTools{margin-top:0}
+  #driverShortcut{display:none}
+    @media(max-width:810px){
+      .sidebar .sidebar-inner{position:absolute;inset:auto 0 0;display:flex;flex-direction:column;align-items:stretch;height:auto;max-height:90dvh;overflow:visible;gap:4px}
+      .sidebar-inner .panel-top,.sidebar-inner .panel-body{position:relative;inset:auto;margin:0;background:var(--white);border-radius:20px 20px 0 0}
+      .sidebar-inner .panel-top{max-height:65dvh;padding-bottom:max(12px,env(safe-area-inset-bottom))}
+      .sidebar-inner .panel-top.is-collapsed{align-self:flex-start;margin-left:12px;border-radius:24px}
+      .sidebar-inner .panel-body:not(.is-collapsed){max-height:55dvh;padding-bottom:max(15px,env(safe-area-inset-bottom))}
+      body:not(.show-lower-panel) .panel-body{display:none}
+      #driverShortcut{display:inline-block}
+    }
   </style>
 </head>
 <body>
@@ -268,7 +278,7 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
       <div class="sidebar-inner">
         <div class="panel-top"><button type="button" id="topPanelToggle" class="mobile-collapse-btn" aria-expanded="true">Recolher busca</button>
           <div class="brand-row"><div class="brand" aria-label="ZECA"><img src="/assets/zeca-icon.svg" alt="" style="width:37px;height:37px;border-radius:9px;margin-right:3px">ZECA</div><div style="display:flex;align-items:center;gap:9px"><div class="theme-switch" role="group" aria-label="Tema"><button type="button" id="lightTheme" aria-pressed="true">☀ Claro</button><button type="button" id="darkTheme" aria-pressed="false">☾ Escuro</button></div><span class="demo-chip">Simulador</span><button type="button" class="profile-dot" id="settingsShortcut" aria-label="Abrir administração de teste"><svg class="ui-icon"><use href="#ico-settings"/></svg></button></div></div>
-          <h1><button type="button" id="showVehicles" aria-controls="vehicleList">Para onde vamos? <span aria-hidden="true">↗</span></button></h1>
+          <h1><button type="button" id="showVehicles" aria-controls="destinationInput">Para onde vamos? <span aria-hidden="true">↗</span></button></h1>
           
           <div class="inputs">
             <span class="route-rail"></span>
@@ -279,7 +289,7 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
             <div class="address-row"><div class="address-search"><input id="destinationInput" autocomplete="off" aria-label="Destino" type="text" placeholder="Para onde?" /><button type="button" class="address-clear" data-clear="destination" aria-label="Limpar destino">×</button></div><button class="mini-button" id="mapPickButton" title="Selecionar destino no mapa" aria-label="Selecionar destino no mapa"><svg class="ui-icon"><use href="#ico-pin"/></svg></button></div>
           </div>
           <div class="suggestions" id="suggestions" hidden role="listbox" aria-label="Sugestões de endereços"></div><button type="button" id="findAddressButton" style="margin:8px 0 0 19px;border:0;border-radius:8px;background:#171717;color:#fff;font-weight:700;font-size:12px;padding:11px 13px;cursor:pointer">Pesquisar destino</button>
-          <div class="live-row"><span class="status" id="gpsStatus"><span class="status-dot"></span><span id="gpsLabel">GPS não ativado</span></span><button class="linkish" id="resetRouteButton">Limpar rota</button></div>
+          <div class="live-row"><button class="linkish" id="driverShortcut" type="button">Motorista</button><span class="status" id="gpsStatus"><span class="status-dot"></span><span id="gpsLabel">GPS não ativado</span></span><button class="linkish" id="resetRouteButton">Limpar rota</button></div>
           <div class="quick-dest" aria-label="Destinos sugeridos" style="display:none">
             <button data-quick="ibirapuera">Parque Ibirapuera</button>
             <button data-quick="congonhas">Congonhas</button>
@@ -429,7 +439,7 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
       $('rideBanner').classList.toggle('hidden',!state.running);
       $('mapBadgeTitle').textContent=state.running?'Viagem simulada em andamento':(state.dest && state.originReady?'Rota preparada':'Sua cidade, sua corrida');
       $('mapBadgeSubtitle').textContent=state.running?'Motorista virtual · não é uma corrida real':state.dest && state.originReady?`${state.distance.toFixed(1).replace('.',',')} km · ${Math.round(state.duration)} min`:'Ative o GPS ou pesquise um destino';
-      $('passengerPanel').classList.toggle('hidden',state.tab!=='passenger');
+      $('passengerPanel').classList.toggle('hidden',state.tab!=='passenger'||!state.dest);
       $('financePanel').classList.toggle('hidden',state.tab!=='finance');
       $('adminPanel').classList.toggle('hidden',state.tab!=='admin');
       $('passengerTab').classList.toggle('active',state.tab==='passenger');
@@ -562,7 +572,7 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
       if(requestedNumber&&!p.exactNumber&&!p.manualVerified){p.numberRequested=true;p.requestedNumber=requestedNumber;p.enteredAddress=entered;}
       $('destinationInput').value=p.enteredAddress||p.name;
       hideSuggestions();
-      if(openOptions){$('destinationInput').blur();showCarOptions(state.originReady);}
+      if(openOptions){$('destinationInput').blur();showCarOptions();}
       getRoute();
       toast('Destino selecionado. Calculando estimativa.');if(p.manualVerified)vaigoMessage('Entrada confirmada neste aparelho.');else if(p.exactNumber)vaigoMessage('Número encontrado. Para conferir a entrada, toque em Ver entrada no mapa.');else if(p.numberRequested)vaigoMessage('⚠️ Número não encontrado na base. Arraste o pino de destino até a entrada correta e clique em Confirmar entrada da residência.');else vaigoMessage('Destino escolhido. Você pode arrastar os marcadores para refinar os pontos.');
     }
@@ -727,23 +737,20 @@ function bindSearch(id,field){
         else state.dest=null;
         getRoute();
         const query=input.value;state.debounce=setTimeout(()=>searchAddress(query,field),500);});
-      input.addEventListener('focus',()=>{hideSuggestions();state.searchField=field;if(field==='destination'&&!state.running)showCarOptions(false);if(!state.running && input.value.length>=3 && input.value!=='Minha localização atual')searchAddress(input.value,field);});
+      input.addEventListener('focus',()=>{hideSuggestions();state.searchField=field;if(!state.running && input.value.length>=3 && input.value!=='Minha localização atual')searchAddress(input.value,field);});
       input.addEventListener('keydown',e=>{if(e.key==='Escape')hideSuggestions();if(e.key==='Enter'){e.preventDefault();const first=$('suggestions').querySelector('[data-suggest]');if(first)first.click();else manualAddressSearch(field);}});
     }
     $('zoomHouse').addEventListener('click',()=>{
       if(!state.dest||!state.map){vaigoMessage('Selecione um destino e aguarde o mapa carregar.');return;}
       if(window.matchMedia('(max-width:810px)').matches){
-        for(const id of ['topPanelToggle','bottomPanelToggle']){
-          const button=$(id);
-          if(!button.parentElement.classList.contains('is-collapsed'))button.click();
-        }
+        showSheet(false,true);
       }
       state.map.setView([state.dest.lat,state.dest.lon],18);
       toast('Confira a entrada. Arraste o pino para ajustar.');
     });
     $('vaigoConfirmHouse')?.addEventListener('click',()=>{if(!state.dest){vaigoMessage('Pesquise e selecione primeiro um destino.');return;}state.dest.manualVerified=true;state.dest.exactNumber=false;saveConfirmedAddress(state.dest);state.dest.name=state.dest.enteredAddress||state.dest.name;$('destinationInput').value=state.dest.name;vaigoMessage('✓ Ponto de chegada confirmado manualmente por você. Não houve verificação oficial do número residencial.');toast('Ponto de chegada confirmado no mapa.');});
 $('findAddressButton').addEventListener('click',()=>manualAddressSearch('destination'));
-    function setTab(t){state.tab=t;render();if(state.map)setTimeout(()=>state.map.invalidateSize(),80);}
+    function setTab(t){state.tab=t;render();if(window.matchMedia('(max-width:810px)').matches)showSheet(t!=='passenger'||!!state.dest);if(state.map)setTimeout(()=>state.map.invalidateSize(),80);}
     function updateConfig(){
       const config={};for(const id of Object.keys(DEFAULT))config[id]=num(id,DEFAULT[id],id==='commission'?0:0,100);
       try{localStorage.setItem('vaigo_config',JSON.stringify(config));}catch(e){}
@@ -885,36 +892,29 @@ $('findAddressButton').addEventListener('click',()=>manualAddressSearch('destina
     if(window.L)initMap();else window.addEventListener('load',()=>{if(window.L)initMap();else $('mapFallback').style.display='flex';});
     const topPanel=document.querySelector('.panel-top'),bottomPanel=document.querySelector('.panel-body');
      const topToggle=document.getElementById('topPanelToggle'),bottomToggle=document.getElementById('bottomPanelToggle');
-     function toggleMobilePanel(panel,button){
-       const collapsed=panel.classList.toggle('is-collapsed');
-       button.setAttribute('aria-expanded',String(!collapsed));
-       button.textContent=panel===topPanel?(collapsed?'Editar trajeto':'Recolher busca'):(collapsed?(state.dest?'Opções de carro':'Para onde vamos?'):'Recolher opções');
-       if(state.map)setTimeout(()=>state.map.invalidateSize(),100);
+     function showSheet(lower,compact=false){
+       document.body.classList.toggle('show-lower-panel',lower);
+       topPanel.classList.toggle('is-collapsed',lower||compact);
+       topToggle.setAttribute('aria-expanded',String(!lower&&!compact));
+       topToggle.textContent=lower||compact?(state.dest?'Editar trajeto':'Para onde vamos?'):'Recolher busca';
+       bottomPanel.classList.remove('is-collapsed');
+       bottomToggle.setAttribute('aria-expanded',String(lower));
+       bottomToggle.textContent='Voltar à busca';
+       if(lower)bottomPanel.scrollTop=0;
+       if(state.map)setTimeout(()=>state.map.invalidateSize(),80);
      }
-     function showCarOptions(collapseSearch){
-       if(state.running)return;
+     function showCarOptions(){
+       if(state.running||!state.dest)return;
        setTab('passenger');
-       if(window.matchMedia('(max-width:810px)').matches){
-         if(bottomPanel.classList.contains('is-collapsed'))toggleMobilePanel(bottomPanel,bottomToggle);
-         if(collapseSearch && !topPanel.classList.contains('is-collapsed'))toggleMobilePanel(topPanel,topToggle);
-       }
-       bottomPanel.scrollTop=0;
      }
-     $('showVehicles').addEventListener('click',()=>showCarOptions(false));
-     if(window.matchMedia('(max-width:810px)').matches){
-       toggleMobilePanel(topPanel,topToggle);
-       topToggle.textContent='ZECA';
-       bottomToggle.textContent='Para onde vamos?';
-     }
-     topToggle.addEventListener('click',()=>toggleMobilePanel(topPanel,topToggle));
-     bottomToggle.addEventListener('click',()=>{
-       if(bottomPanel.classList.contains('is-collapsed') && !state.dest && !state.running){
-         if(topPanel.classList.contains('is-collapsed'))toggleMobilePanel(topPanel,topToggle);
-         showCarOptions(false);
-         $('destinationInput').focus();
-       }else toggleMobilePanel(bottomPanel,bottomToggle);
+     $('showVehicles').addEventListener('click',()=>$('destinationInput').focus());
+     $('driverShortcut').addEventListener('click',()=>setTab('finance'));
+     topToggle.addEventListener('click',()=>{
+       if(!topPanel.classList.contains('is-collapsed') && state.dest){showCarOptions();return;}
+       showSheet(false,!topPanel.classList.contains('is-collapsed'));
      });
-     if(window.innerWidth>810)bottomPanel.classList.remove('is-collapsed');
+     bottomToggle.addEventListener('click',()=>showSheet(false));
+     showSheet(false,window.matchMedia('(max-width:810px)').matches);
      // Keep additional tools inside the scrollable lower panel on small screens.
     // Previously the toolbar remained in a full-screen pointer-events:none
     // sidebar layer, where it could visually overlap search and block touches.
@@ -924,7 +924,7 @@ $('findAddressButton').addEventListener('click',()=>manualAddressSearch('destina
     const sidebarInner = document.querySelector('.sidebar-inner');
     function placeToolsBar() {
       if (mobileLayout.matches) {
-        if (toolsBar.parentElement !== lowerPanel) lowerPanel.append(toolsBar);
+        if (toolsBar.parentElement !== topPanel) topPanel.append(toolsBar);
       } else if (toolsBar.parentElement !== sidebarInner) {
         sidebarInner.insertBefore(toolsBar, lowerPanel);
       }
