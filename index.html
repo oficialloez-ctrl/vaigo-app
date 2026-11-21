@@ -291,6 +291,17 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
     #adsEditor summary{padding:12px 0;cursor:pointer}#adFields{display:grid;gap:10px;border:0;padding:8px 0}
     #adPreview>div{display:flex;align-items:center;gap:8px;margin:6px 0}#adPreview img{width:70px;height:40px;object-fit:contain}
   .greeting{display:flex;align-items:baseline;justify-content:center;gap:10px;margin:6px 0 12px}.greeting strong{font-size:19px}.greeting button{font-size:11px}#greetingForm{padding:0 0 12px}#greetingForm label{display:block;margin-bottom:4px}#greetingForm input{max-width:68%;padding:6px}
+  .greeting{justify-content:flex-start}
+    #openPreferences{min-width:44px;min-height:44px}
+    #preferences{background:var(--white);color:var(--ink);border:1px solid var(--line);border-radius:18px;padding:18px;width:min(92vw,420px);max-height:82dvh;overflow:auto;margin:auto}
+    #preferences::backdrop{background:#080d0bc4}
+    #preferences header{display:flex;align-items:center;justify-content:space-between}
+    #preferences section{border-top:1px solid var(--line);margin-top:12px;padding-top:12px}
+    #preferences h3{font-size:14px;margin:0 0 7px}
+    #preferences button{border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:var(--fill);color:var(--ink);font-size:14px;margin:2px;text-decoration:none}
+    #preferences #driverShortcut{display:inline-block}
+    #preferences #vaigoTools{padding:4px 0!important;background:transparent!important;border:none;margin:0}
+    #preferences #gpsStatus{display:block;margin:4px}
   </style>
 </head>
 <body>
@@ -313,9 +324,9 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
     <aside class="sidebar" aria-label="Planejamento da corrida">
       <div class="sidebar-inner">
         <div class="panel-top"><button type="button" id="topPanelToggle" class="mobile-collapse-btn" aria-expanded="true" aria-label="Recolher busca"></button>
-          <div class="brand-row"><div class="brand" aria-label="ZECA"><img src="/assets/zeca-icon.svg" alt="" style="width:37px;height:37px;border-radius:9px;margin-right:3px">ZECA</div><div style="display:flex;align-items:center;gap:9px"><div class="theme-switch" role="group" aria-label="Tema"><button type="button" id="lightTheme" aria-pressed="true">☀ Claro</button><button type="button" id="darkTheme" aria-pressed="false">☾ Escuro</button></div><span class="demo-chip">Simulador</span><button type="button" class="profile-dot" hidden id="settingsShortcut" aria-label="Abrir administração"><svg class="ui-icon"><use href="#ico-settings"/></svg></button></div></div>
-          <div class="greeting"><strong id="tripGreeting"></strong><button type="button" id="editGreeting" class="linkish" aria-label="Editar nome da saudação">Editar nome</button></div>
-          <form id="greetingForm" hidden><label for="firstName">Como quer ser chamado?</label><input id="firstName" autocomplete="given-name" maxlength="40" required><button type="submit">Salvar</button><small role="status" id="nameStatus"></small></form>
+          <div class="brand-row"><div class="brand" aria-label="ZECA"><img src="/assets/zeca-icon.svg" alt="" style="width:37px;height:37px;border-radius:9px;margin-right:3px">ZECA</div><button class="profile-dot" id="openPreferences" aria-label="Configurações" aria-haspopup="dialog" aria-controls="preferences"><svg class="ui-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="m9 3 1-2h4l1 2 2 1 2-.2 2 3-1.3 2 .3 2 1.5 1.8-1 3.6-2.4.4-1.5 1.4-.4 2.4-3.8.9-1.6-1.6-2-.3-2 1.2-3-2 .3-2.3-1-1.8L1 13v-3l2.2-1.3 1-1.9L4 4.5l3-1.7z"/><circle cx="11.8" cy="11.6" r="3.6"/></svg></button></div>
+          <div class="greeting"><strong id="tripGreeting"></strong></div>
+          
           <h1><button type="button" id="showVehicles" aria-controls="destinationInput">Para onde vamos? <span aria-hidden="true">↗</span></button></h1>
           
           <div class="inputs">
@@ -327,7 +338,7 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
             <div class="address-row"><div class="address-search"><input id="destinationInput" autocomplete="off" aria-label="Destino" type="text" placeholder="Para onde?" /><button type="button" class="address-clear" data-clear="destination" aria-label="Limpar destino">×</button></div><button class="mini-button" id="mapPickButton" title="Selecionar destino no mapa" aria-label="Escolher destino no mapa" aria-pressed="false">Escolher no mapa</button></div>
           </div>
           <div id="estimateStatus" role="status"></div><div class="suggestions" id="suggestions" hidden role="listbox" aria-label="Sugestões de endereços"></div><button type="button" id="findAddressButton" style="margin:8px 0 0 19px;border:0;border-radius:8px;background:#171717;color:#fff;font-weight:700;font-size:12px;padding:11px 13px;cursor:pointer">Pesquisar destino</button>
-          <div class="live-row"><button class="linkish" id="driverShortcut" type="button">Motorista</button><span class="status" id="gpsStatus"><span class="status-dot"></span><span id="gpsLabel">GPS não ativado</span></span><button class="linkish" id="managePassword" type="button">Configurar senha</button><button class="linkish" id="logoutButton">Sair</button><button class="linkish" id="resetRouteButton">Limpar rota</button></div>
+          
           <section id="recentRides" aria-label="Corridas anteriores" hidden></section>
           <section id="adCarousel" aria-label="Publicidade" hidden><img id="adImage" alt="Anúncio"><div id="adDots"></div></section>
           <div class="quick-dest" aria-label="Destinos sugeridos" style="display:none">
@@ -336,15 +347,7 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
             <button data-quick="eldorado">Shopping Eldorado</button>
           </div>
         </div>
-        <details id="tripTools"><summary>Mais opções do trajeto</summary><div id="vaigoTools" style="padding:9px 17px;background:#fff;border-bottom:1px solid #eee;display:flex;gap:6px;flex-wrap:wrap;position:relative;z-index:6">
-<button type="button" id="vaigoFavSave" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">☆ Salvar destino</button>
-<button type="button" id="vaigoFavShow" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">★ Favoritos</button>
-<button type="button" id="vaigoPinToggle" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">Escolher embarque no mapa</button>
-<button type="button" id="vaigoUseGPS" style="padding:9px;border-radius:8px;border:1px solid #b5d6bb;background:#ecf7ee">◎ Usar GPS no embarque</button>
-<button type="button" id="zoomHouse" style="padding:9px;border:1px solid #bbb;border-radius:8px">Ver entrada no mapa</button>
-<button type="button" id="vaigoConfirmHouse" style="padding:9px;border-radius:8px;border:1px solid #b5d6bb;background:#ecf7ee">✓ Confirmar entrada da residência</button>
-<button type="button" id="vaigoDrivers" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">🚘 Carros disponíveis</button>
-<div id="vaigoToolsMsg" aria-live="polite" style="flex-basis:100%;font-size:11px;color:#666"></div></div></details>
+        
 <div class="panel-body is-collapsed"><button type="button" id="bottomPanelToggle" class="mobile-collapse-btn" aria-expanded="false">Opções de carro</button>
           <div class="tab-bar" role="tablist" aria-label="Painéis"><button id="passengerTab" role="tab" aria-selected="true" class="active">Passageiro</button><button id="financeTab" role="tab" aria-selected="false">Motorista</button><button hidden id="adminTab" role="tab" aria-selected="false">ADM</button></div>
           <section id="passengerPanel" class="hidden" role="tabpanel" aria-labelledby="passengerTab">
@@ -391,6 +394,19 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
       <span id="fleetStatus" hidden></span><div class="map-tip" id="mapTip">Explore o mapa</div>
     </main>
   </div>
+<dialog id="preferences" aria-labelledby="prefsTitle"><header><h2 id="prefsTitle">Configurações</h2><button type="button" id="closePrefs" aria-label="Fechar configurações">×</button></header>
+<section><h3>Conta</h3><button type="button" id="editGreeting" class="linkish" aria-label="Editar nome da saudação">Editar nome</button><form id="greetingForm" hidden><label for="firstName">Como quer ser chamado?</label><input id="firstName" autocomplete="given-name" maxlength="40" required><button type="submit">Salvar</button><small role="status" id="nameStatus"></small></form><button class="linkish" id="managePassword" type="button">Configurar senha</button><button class="linkish" id="logoutButton">Sair</button></section>
+<section><h3>Aparência</h3><div class="theme-switch" role="group" aria-label="Tema"><button type="button" id="lightTheme" aria-pressed="true">☀ Claro</button><button type="button" id="darkTheme" aria-pressed="false">☾ Escuro</button></div></section>
+<section><h3>Modo de uso</h3><button class="linkish" id="driverShortcut" type="button">Motorista</button><button type="button" id="settingsShortcut" hidden>Administração</button></section>
+<section><h3>Trajeto e GPS</h3><span class="status" id="gpsStatus"><span class="status-dot"></span><span id="gpsLabel">GPS não ativado</span></span><div id="vaigoTools" style="padding:9px 17px;background:#fff;border-bottom:1px solid #eee;display:flex;gap:6px;flex-wrap:wrap;position:relative;z-index:6">
+<button type="button" id="vaigoFavSave" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">☆ Salvar destino</button>
+<button type="button" id="vaigoFavShow" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">★ Favoritos</button>
+<button type="button" id="vaigoPinToggle" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">Escolher embarque no mapa</button>
+<button type="button" id="vaigoUseGPS" style="padding:9px;border-radius:8px;border:1px solid #b5d6bb;background:#ecf7ee">◎ Usar GPS no embarque</button>
+<button type="button" id="zoomHouse" style="padding:9px;border:1px solid #bbb;border-radius:8px">Ver entrada no mapa</button>
+<button type="button" id="vaigoConfirmHouse" style="padding:9px;border-radius:8px;border:1px solid #b5d6bb;background:#ecf7ee">✓ Confirmar entrada da residência</button>
+<button type="button" id="vaigoDrivers" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">🚘 Carros disponíveis</button>
+<div id="vaigoToolsMsg" aria-live="polite" style="flex-basis:100%;font-size:11px;color:#666"></div></div><button class="linkish" id="resetRouteButton">Limpar rota</button></section></dialog>
   <div id="toast" role="status" aria-live="polite" class="toast"></div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
   <script>
@@ -1018,23 +1034,17 @@ $('findAddressButton').addEventListener('click',()=>manualAddressSearch('destina
      });
      bottomToggle.addEventListener('click',()=>showSheet(false));
      showSheet(false);
-     // Keep additional tools inside the scrollable lower panel on small screens.
-    // Previously the toolbar remained in a full-screen pointer-events:none
-    // sidebar layer, where it could visually overlap search and block touches.
-    const mobileLayout = window.matchMedia('(max-width:810px)');
-    const toolsBar = document.getElementById('tripTools');
-    const lowerPanel = document.querySelector('.panel-body');
-    const sidebarInner = document.querySelector('.sidebar-inner');
-    function placeToolsBar() {
-      if (mobileLayout.matches) {
-        if (toolsBar.parentElement !== topPanel) topPanel.append(toolsBar);
-      } else if (toolsBar.parentElement !== sidebarInner) {
-        sidebarInner.insertBefore(toolsBar, lowerPanel);
-      }
-    }
-    placeToolsBar();
-    mobileLayout.addEventListener?.('change',placeToolsBar);
-    window.addEventListener('resize',placeToolsBar);
+    const prefs=$('preferences');
+    $('openPreferences').onclick=()=>prefs.showModal();
+    $('closePrefs').onclick=()=>prefs.close();
+    prefs.addEventListener('click',e=>{
+      if(e.target.closest('#driverShortcut,#settingsShortcut,#managePassword'))prefs.close();
+    },true);
+    prefs.addEventListener('click',e=>{
+      if(e.target.closest('#vaigoPinToggle') && state.pickupAdjust ||
+         e.target.closest('#zoomHouse') && state.dest && state.map ||
+         e.target.closest('#vaigoFavShow') && !$('suggestions').hidden) prefs.close();
+    });
     render();
     window.addEventListener('pagehide',()=>{if(state.gpsWatch!==null)pauseGPS();});
     
