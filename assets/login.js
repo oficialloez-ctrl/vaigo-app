@@ -61,6 +61,27 @@
     const app=document.querySelector('.app');
     el('loginScreen').hidden=true;app.hidden=false;
     startZeca(user,settings);
+    setupAds(user.admin,api);
+    let name=user.name||'';
+    function greet(){
+      const hour=new Date().getHours();
+      const greeting=hour>=5&&hour<12?'Bom dia':hour>=12&&hour<18?'Boa tarde':'Boa noite';
+      el('tripGreeting').textContent=name?greeting+', '+name:greeting;
+      el('editGreeting').textContent=name?'Editar nome':'Adicionar nome';
+    }
+    greet();setInterval(greet,60000);
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)greet();});
+    el('editGreeting').onclick=()=>{
+      el('greetingForm').hidden=!el('greetingForm').hidden;
+      if(!el('greetingForm').hidden){el('firstName').value=name;el('firstName').focus();}
+    };
+    el('greetingForm').onsubmit=async event=>{
+      event.preventDefault();
+      try{
+        const data=await api('account',{action:'profile',name:el('firstName').value});
+        name=data.name;greet();el('nameStatus').textContent='';el('greetingForm').hidden=true;
+      }catch(e){message('nameStatus',e);}
+    };
     el('managePassword').onclick=()=>{
       app.hidden=true;el('loginScreen').hidden=false;el('loginEmail').value=user.email;
       showMode('reset');

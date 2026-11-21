@@ -20,12 +20,21 @@ module.exports=async(req,res)=>{
     if(req.method==='GET'){
       const user=await account(req);
       if(!user)return res.json({user:null});
-      const [cfg]=await query('select settings from zeca_config where id=1',[]);
+      const [cfg]=await query('select (select settings from zeca_config where id=1) as settings, (select first_name from zeca_profile_names where email=$1) as name',[user.email]);
+      user.name=cfg?.name||(user.owner?'Luiz':'');
       return res.json({user,settings:cfg?.settings||{}});
     }
     if(req.method!=='POST'||!sameOrigin(req))return res.status(403).end();
     const {action,otp}=req.body||{};
     const cookie=(token,seconds)=>res.setHeader('Set-Cookie',cookieName+'='+token+'; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age='+seconds);
+    if(action==='profile'){
+      const user=await account(req);
+      if(!user)return res.status(401).json({error:'Entre para salvar seu nome.'});
+      const name=String(req.body.name||'').trim().replace(/\s+/g,' ');
+      if(!name||name.length>40)return res.status(400).json({error:'Informe um nome de até 40 caracteres.'});
+      await query('insert into zeca_profile_names values($1,$2) on conflict(email) do update set first_name=excluded.first_name',[user.email,name]);
+      return res.json({name});
+    }
     if(action==='logout'){
       await query('delete from zeca_sessions where digest=$1',[sessionKey(req)]);
       cookie('',0);return res.status(204).end();
