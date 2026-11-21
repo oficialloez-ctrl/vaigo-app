@@ -1,4 +1,8 @@
-const {randomBytes}=require('node:crypto');
+const {randomBytes,scrypt,timingSafeEqual}=require('node:crypto');
+const derive=require('node:util').promisify(scrypt);
+function passwordDigest(password,salt){
+  return derive(password,salt,64,{N:32768,r:8,p:3,maxmem:64*1024*1024});
+}
 const {query}=require('../lib/db');
 const {account,sessionKey,cookieName,hash,sameOrigin}=require('../lib/session');
 const auth='https://ep-fragrant-bonus-bdjm541h.neonauth.c-8.us-east-2.aws.neon.tech/neondb/auth';
@@ -27,20 +31,39 @@ module.exports=async(req,res)=>{
       cookie('',0);return res.status(204).end();
     }
     const email=String(req.body.email||'').trim().toLowerCase();
-    if(!['send','verify'].includes(action)||email.length>254||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return res.status(400).json({error:'Informe um e-mail válido.'});
-    if(action==='verify'&&!/^\d{6}$/.test(otp))return res.status(400).json({error:'Digite os seis números do código.'});
+    if(!['send','verify','password','setPassword'].includes(action)||email.length>254||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return res.status(400).json({error:'Informe um e-mail válido.'});
+    if((action==='verify'||action==='setPassword')&&!/^\d{6}$/.test(otp))return res.status(400).json({error:'Digite os seis números do código.'});
     const ip=req.headers['x-vercel-forwarded-for']||req.socket?.remoteAddress||'';
     if(!await allowed(action+':ip:'+ip,60)||!await allowed(action+':email:'+email,action==='send'?5:12))return res.status(429).json({error:'Muitas tentativas. Aguarde alguns minutos.'});
-    const send=action==='send';
-    const response=await fetch(auth+(send?'/email-otp/send-verification-otp':'/sign-in/email-otp'),{method:'POST',
-      headers:{'Content-Type':'application/json',Origin:origin},body:JSON.stringify(send?{email,type:'sign-in'}:{email,otp}),signal:AbortSignal.timeout(15000)});
-    const result=await response.json();
-    if(!response.ok)return res.status(response.status===429?429:400).json({error:send?'Não foi possível enviar o código. Tente novamente em instantes.':'Código inválido ou expirado.'});
-    if(send)return res.json({sent:true});
-    if(!result.token||result.user?.emailVerified!==true||result.user.email.toLowerCase()!==email)return res.status(401).json({error:'Confirme seu e-mail para entrar.'});
+    const password=req.body.password;
+    if(['password','setPassword'].includes(action) && (typeof password!=='string'||!password.length||password.length>128||(action==='setPassword'&&password.length<8)))return res.status(400).json({error:'Use uma senha de 8 a 128 caracteres.'});
     const token=randomBytes(32).toString('hex');
-    await query(`with clean as (delete from zeca_sessions where expires_at<=now())
-      insert into zeca_sessions values ($1,$2,now()+interval '7 days')`,[hash(token),email]);
+    if(action==='password'){
+      const [stored]=await query('select salt,digest from zeca_passwords where email=$1',[email]);
+      const actual=await passwordDigest(password,stored?.salt||'5eb07ab2de19413b619bfc099dd08b21');
+      if(!stored||!timingSafeEqual(actual,Buffer.from(stored.digest,'hex')))return res.status(401).json({error:'E-mail ou senha incorretos.'});
+      const rows=await query(`insert into zeca_sessions select $1,email,now()+interval '7 days' from zeca_passwords
+        where email=$2 and digest=$3 for share returning email`,[hash(token),email,stored.digest]);
+      if(!rows.length)return res.status(401).json({error:'Entre com a senha atual.'});
+    }else{
+      const send=action==='send';
+      const response=await fetch(auth+(send?'/email-otp/send-verification-otp':'/sign-in/email-otp'),{method:'POST',
+        headers:{'Content-Type':'application/json',Origin:origin},body:JSON.stringify(send?{email,type:'sign-in'}:{email,otp}),signal:AbortSignal.timeout(15000)});
+      const result=await response.json();
+      if(!response.ok)return res.status(response.status===429?429:400).json({error:send?'Não foi possível enviar o código. Tente novamente em instantes.':'Código inválido ou expirado.'});
+      if(send)return res.json({sent:true});
+      if(!result.token||result.user?.emailVerified!==true||result.user.email.toLowerCase()!==email)return res.status(401).json({error:'Confirme seu e-mail para entrar.'});
+      if(action==='setPassword'){
+        const salt=randomBytes(16).toString('hex'),digest=(await passwordDigest(password,salt)).toString('hex');
+        await query(`with credential as (insert into zeca_passwords values($1,$2,$3)
+          on conflict(email) do update set salt=excluded.salt,digest=excluded.digest returning email),
+          revoke as (delete from zeca_sessions where email=$1)
+          insert into zeca_sessions select $4,email,now()+interval '7 days' from credential`,[email,salt,digest,hash(token)]);
+      }else{
+        await query(`with clean as (delete from zeca_sessions where expires_at<=now())
+          insert into zeca_sessions values ($1,$2,now()+interval '7 days')`,[hash(token),email]);
+      }
+    }
     cookie(token,604800);return res.json({ok:true});
   }catch{return res.status(503).json({error:'Serviço indisponível. Tente novamente.'});}
 };

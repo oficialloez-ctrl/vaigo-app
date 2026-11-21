@@ -273,10 +273,19 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
     .vehicle[data-vehicle="xl"] .car-picture{background:#6a9ddd2e}
     .car-picture{border-radius:9px}
     #ownerGrants li{margin:6px 0;overflow-wrap:anywhere}
+  #loginScreen{position:fixed;inset:0;overflow:auto;min-height:0}
+    #authActions{display:flex;flex-wrap:wrap;gap:10px}
+    #authActions button,#changeEmail{background:transparent;color:#adf4c3;border:0;padding:5px 0;text-align:left}
+    #topPanelToggle[aria-expanded="true"]{min-width:44px;min-height:44px;font-size:24px;line-height:1}
   </style>
 </head>
 <body>
-  <main id="loginScreen"><form id="loginForm"><img src="/assets/icon-192.png" width="54" height="54" alt="ZECA"><h1>Entrar no ZECA</h1><label for="loginEmail">Seu e-mail</label><input id="loginEmail" type="email" autocomplete="email" required maxlength="254"><div id="codeRow" hidden><label for="loginCode">Código enviado por e-mail</label><input id="loginCode" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6"></div><button id="loginSubmit" class="btn-primary">Receber código</button><button type="button" id="changeEmail" hidden>Alterar e-mail ou reenviar</button><p id="loginMsg" role="status"></p></form></main>
+  <main id="loginScreen"><form id="loginForm"><img src="/assets/icon-192.png" width="54" height="54" alt="ZECA"><h1 id="authTitle">Entrar no ZECA</h1><label for="loginEmail">Seu e-mail</label><input id="loginEmail" type="email" autocomplete="username" required maxlength="254">
+    <div id="codeRow" hidden><label for="loginCode">Código enviado por e-mail</label><input id="loginCode" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6"></div>
+    <div id="passwordRow"><label id="passwordLabel" for="loginPassword">Senha</label><input id="loginPassword" type="password" autocomplete="current-password" required maxlength="128"></div>
+    <button id="loginSubmit" class="btn-primary">Entrar</button><div id="authActions">
+    <button type="button" data-auth="create">Criar minha senha</button><button type="button" data-auth="reset">Esqueci minha senha</button><button type="button" data-auth="code">Entrar com código</button></div>
+    <button type="button" id="changeEmail" hidden>Voltar ao login</button><p id="loginMsg" role="status"></p></form></main>
   <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
     <symbol id="ico-locate" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></symbol>
     <symbol id="ico-pin" viewBox="0 0 24 24"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></symbol>
@@ -289,7 +298,7 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
   <div class="app" hidden>
     <aside class="sidebar" aria-label="Planejamento da corrida">
       <div class="sidebar-inner">
-        <div class="panel-top"><button type="button" id="topPanelToggle" class="mobile-collapse-btn" aria-expanded="true">Recolher busca</button>
+        <div class="panel-top"><button type="button" id="topPanelToggle" class="mobile-collapse-btn" aria-expanded="true" aria-label="Recolher busca">−</button>
           <div class="brand-row"><div class="brand" aria-label="ZECA"><img src="/assets/zeca-icon.svg" alt="" style="width:37px;height:37px;border-radius:9px;margin-right:3px">ZECA</div><div style="display:flex;align-items:center;gap:9px"><div class="theme-switch" role="group" aria-label="Tema"><button type="button" id="lightTheme" aria-pressed="true">☀ Claro</button><button type="button" id="darkTheme" aria-pressed="false">☾ Escuro</button></div><span class="demo-chip">Simulador</span><button type="button" class="profile-dot" hidden id="settingsShortcut" aria-label="Abrir administração"><svg class="ui-icon"><use href="#ico-settings"/></svg></button></div></div>
           <h1><button type="button" id="showVehicles" aria-controls="destinationInput">Para onde vamos? <span aria-hidden="true">↗</span></button></h1>
           
@@ -302,7 +311,7 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
             <div class="address-row"><div class="address-search"><input id="destinationInput" autocomplete="off" aria-label="Destino" type="text" placeholder="Para onde?" /><button type="button" class="address-clear" data-clear="destination" aria-label="Limpar destino">×</button></div><button class="mini-button" id="mapPickButton" title="Selecionar destino no mapa" aria-label="Escolher destino no mapa" aria-pressed="false">Escolher no mapa</button></div>
           </div>
           <div id="estimateStatus" role="status"></div><div class="suggestions" id="suggestions" hidden role="listbox" aria-label="Sugestões de endereços"></div><button type="button" id="findAddressButton" style="margin:8px 0 0 19px;border:0;border-radius:8px;background:#171717;color:#fff;font-weight:700;font-size:12px;padding:11px 13px;cursor:pointer">Pesquisar destino</button>
-          <div class="live-row"><button class="linkish" id="driverShortcut" type="button">Motorista</button><span class="status" id="gpsStatus"><span class="status-dot"></span><span id="gpsLabel">GPS não ativado</span></span><button class="linkish" id="logoutButton">Sair</button><button class="linkish" id="resetRouteButton">Limpar rota</button></div>
+          <div class="live-row"><button class="linkish" id="driverShortcut" type="button">Motorista</button><span class="status" id="gpsStatus"><span class="status-dot"></span><span id="gpsLabel">GPS não ativado</span></span><button class="linkish" id="managePassword" type="button">Configurar senha</button><button class="linkish" id="logoutButton">Sair</button><button class="linkish" id="resetRouteButton">Limpar rota</button></div>
           <div class="quick-dest" aria-label="Destinos sugeridos" style="display:none">
             <button data-quick="ibirapuera">Parque Ibirapuera</button>
             <button data-quick="congonhas">Congonhas</button>
@@ -374,9 +383,9 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
     const money = n => (Number.isFinite(n) ? n : 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
     const num = (id, fallback, min, max) => { const n = Number($(id).value.replace?.(',','.') ?? $(id).value); return Number.isFinite(n) && n >= min && n <= max ? n : fallback; };
     const defs = {
-      eco: {name:'ZECA X', sub:'Hatch econômico · até 4 pessoas', multiplier:1, liters:12, silhouette:'#2b2e32'},
-      comfort: {name:'Comfort', sub:'Sedã executivo · até 4 pessoas', multiplier:1.35, liters:10, silhouette:'#56575c'},
-      xl: {name:'XL', sub:'SUV espaçoso · até 6 pessoas', multiplier:1.85, liters:8, silhouette:'#454951'}
+      eco: {name:'ZECA X', sub:'Econômico · até 4 pessoas', multiplier:1, liters:12, silhouette:'#2b2e32'},
+      comfort: {name:'Comfort', sub:'Executivo · até 4 pessoas', multiplier:1.35, liters:10, silhouette:'#56575c'},
+      xl: {name:'XL', sub:'Espaçoso · até 6 pessoas', multiplier:1.85, liters:8, silhouette:'#454951'}
     };
     const sampleDest = {
       ibirapuera:{name:'Parque Ibirapuera', lat:-23.5874, lon:-46.6576},
@@ -391,9 +400,9 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
     function toast(message) { $('toast').textContent=message; $('toast').classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>$('toast').classList.remove('show'),3900); }
     function svgCar(id) {
       const shapes={
-        eco:['Hatch compacto','#42bd9e','M14 42l8-19q2-5 9-5h27l15 15 17 5 3 12H12z','M28 23h12v12H24z M44 23h12l12 12H44z',28,75],
-        comfort:['Sedã executivo','#d0a85f','M5 40l15-6 22-15h24l18 14 19 4 5 13H5z','M30 33l15-10h9v10z M58 23h7l15 10H58z',24,88],
-        xl:['SUV de seis lugares','#71a7e1','M5 43l3-24 6-5h55l17 16 17 5 4 15H5z','M15 20h16v12H14z M35 20h16v12H35z M55 20h12l13 12H55z',23,88]
+        eco:['Compacto','#42bd9e','M14 42l8-19q2-5 9-5h27l15 15 17 5 3 12H12z','M28 23h12v12H24z M44 23h12l12 12H44z',28,75],
+        comfort:['Executivo','#d0a85f','M5 40l15-6 22-15h24l18 14 19 4 5 13H5z','M30 33l15-10h9v10z M58 23h7l15 10H58z',24,88],
+        xl:['Seis lugares','#71a7e1','M5 43l3-24 6-5h55l17 16 17 5 4 15H5z','M15 20h16v12H14z M35 20h16v12H35z M55 20h12l13 12H55z',23,88]
       };
       const [label,paint,body,windows,front,rear]=shapes[id];
       const wheels=[front,rear].map(x=>`<circle cx="${x}" cy="49" r="9" fill="#232832"/><circle cx="${x}" cy="49" r="4" fill="#c8d4d9"/>`).join('');
@@ -945,7 +954,8 @@ $('findAddressButton').addEventListener('click',()=>manualAddressSearch('destina
        document.body.classList.toggle('show-lower-panel',lower);
        topPanel.classList.toggle('is-collapsed',lower||compact);
        topToggle.setAttribute('aria-expanded',String(!lower&&!compact));
-       topToggle.textContent=lower||compact?(state.dest?'Editar trajeto':'Para onde vamos?'):'Recolher busca';
+       topToggle.textContent=lower||compact?(state.dest?'Editar trajeto':'Para onde vamos?'):'−';
+       topToggle.setAttribute('aria-label',lower||compact?topToggle.textContent:'Recolher busca');
        bottomPanel.classList.remove('is-collapsed');
        bottomToggle.setAttribute('aria-expanded',String(lower));
        bottomToggle.textContent='Voltar à busca';

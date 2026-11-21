@@ -10,25 +10,39 @@
     return data;
   }
   const message=(id,error)=>el(id).textContent=error.message||error;
-  function codeStep(active){
-    el('codeRow').hidden=el('changeEmail').hidden=!active;
-    el('loginEmail').readOnly=active;
-    el('loginCode').required=active;
-    el('loginSubmit').textContent=active?'Entrar':'Receber código';
-    el('loginCode').value='';
-    (active?el('loginCode'):el('loginEmail')).focus();
+  let mode='login',sent=false;
+  function showMode(next,codeSent=false){
+    mode=next;sent=codeSent;
+    const login=mode==='login',setting=mode==='create'||mode==='reset';
+    el('authTitle').textContent={login:'Entrar no ZECA',create:'Criar minha senha',reset:'Redefinir senha',code:'Entrar com código'}[mode];
+    el('loginEmail').readOnly=sent;
+    el('codeRow').hidden=!sent;el('loginCode').required=sent;el('loginCode').value='';
+    el('passwordRow').hidden=!(login||(setting&&sent));
+    const pw=el('loginPassword');
+    pw.required=!el('passwordRow').hidden;pw.minLength=login?1:8;pw.value='';
+    pw.autocomplete=login?'current-password':'new-password';
+    el('passwordLabel').textContent=login?'Senha':'Nova senha (mínimo de 8 caracteres)';
+    el('loginSubmit').textContent=login?'Entrar':!sent?'Receber código':setting?'Salvar senha e entrar':'Entrar';
+    el('authActions').hidden=!login;el('changeEmail').hidden=login;
+    message('loginMsg',sent?'Confira o código de seis números no seu e-mail.':'');
+    (sent?el('loginCode'):el('loginEmail')).focus();
   }
-  el('changeEmail').onclick=()=>{codeStep(false);message('loginMsg','');};
+  for(const button of document.querySelectorAll('[data-auth]'))button.onclick=()=>showMode(button.dataset.auth);
+  el('changeEmail').onclick=()=>showMode('login');
   el('loginForm').onsubmit=async event=>{
     event.preventDefault();
-    const email=el('loginEmail').value.trim(),send=el('codeRow').hidden;
-    el('loginSubmit').disabled=true;
+    const action=mode==='login'?'password':!sent?'send':mode==='code'?'verify':'setPassword';
+    const body={action,email:el('loginEmail').value.trim()};
+    if(action==='password'||action==='setPassword')body.password=el('loginPassword').value;
+    if(sent)body.otp=el('loginCode').value.trim();
+    const buttons=el('loginForm').querySelectorAll('button');
+    buttons.forEach(button=>button.disabled=true);
     try{
-      await api('account',{action:send?'send':'verify',email,otp:el('loginCode').value.trim()});
-      if(send){codeStep(true);message('loginMsg','Confira o código de seis números no seu e-mail.');}
+      await api('account',body);
+      if(action==='send')showMode(mode,true);
       else location.reload();
     }catch(e){message('loginMsg',e);}
-    finally{el('loginSubmit').disabled=false;}
+    finally{buttons.forEach(button=>button.disabled=false);}
   };
   async function grants(){
     const {admins}=await api('admin');
@@ -47,6 +61,10 @@
     const app=document.querySelector('.app');
     el('loginScreen').hidden=true;app.hidden=false;
     startZeca(user,settings);
+    el('managePassword').onclick=()=>{
+      app.hidden=true;el('loginScreen').hidden=false;el('loginEmail').value=user.email;
+      showMode('reset');
+    };
     el('logoutButton').onclick=async()=>{try{await api('account',{action:'logout'});location.reload();}catch(e){alert(e.message);}};
     if(user.admin){
       el('saveSettings').onclick=async()=>{try{
