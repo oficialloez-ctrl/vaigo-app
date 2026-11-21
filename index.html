@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -288,7 +288,7 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
             </div>
             <div class="address-row"><div class="address-search"><input id="destinationInput" autocomplete="off" aria-label="Destino" type="text" placeholder="Para onde?" /><button type="button" class="address-clear" data-clear="destination" aria-label="Limpar destino">×</button></div><button class="mini-button" id="mapPickButton" title="Selecionar destino no mapa" aria-label="Selecionar destino no mapa"><svg class="ui-icon"><use href="#ico-pin"/></svg></button></div>
           </div>
-          <div class="suggestions" id="suggestions" hidden role="listbox" aria-label="Sugestões de endereços"></div><button type="button" id="findAddressButton" style="margin:8px 0 0 19px;border:0;border-radius:8px;background:#171717;color:#fff;font-weight:700;font-size:12px;padding:11px 13px;cursor:pointer">Pesquisar destino</button>
+          <div id="estimateStatus" role="status"></div><div class="suggestions" id="suggestions" hidden role="listbox" aria-label="Sugestões de endereços"></div><button type="button" id="findAddressButton" style="margin:8px 0 0 19px;border:0;border-radius:8px;background:#171717;color:#fff;font-weight:700;font-size:12px;padding:11px 13px;cursor:pointer">Pesquisar destino</button>
           <div class="live-row"><button class="linkish" id="driverShortcut" type="button">Motorista</button><span class="status" id="gpsStatus"><span class="status-dot"></span><span id="gpsLabel">GPS não ativado</span></span><button class="linkish" id="resetRouteButton">Limpar rota</button></div>
           <div class="quick-dest" aria-label="Destinos sugeridos" style="display:none">
             <button data-quick="ibirapuera">Parque Ibirapuera</button>
@@ -307,7 +307,7 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
 <div id="vaigoToolsMsg" aria-live="polite" style="flex-basis:100%;font-size:11px;color:#666"></div></div></details>
 <div class="panel-body is-collapsed"><button type="button" id="bottomPanelToggle" class="mobile-collapse-btn" aria-expanded="false">Opções de carro</button>
           <div class="tab-bar" role="tablist" aria-label="Painéis"><button id="passengerTab" role="tab" aria-selected="true" class="active">Passageiro</button><button id="financeTab" role="tab" aria-selected="false">Motorista</button><button id="adminTab" role="tab" aria-selected="false">ADM</button></div>
-          <section id="passengerPanel" role="tabpanel" aria-labelledby="passengerTab">
+          <section id="passengerPanel" class="hidden" role="tabpanel" aria-labelledby="passengerTab">
             <div class="section-title"><h2>Escolha uma viagem</h2><small>Valores estimados</small></div>
             <div class="vehicle-list" id="vehicleList"></div>
             <div class="route-stats"><svg class="ui-icon"><use href="#ico-route"/></svg><span id="tripDistance">7,2 km</span><span class="sep"></span><span id="tripDuration">18 min</span><span class="route-label" id="routeMode">Exemplo</span></div>
@@ -439,7 +439,7 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
       $('rideBanner').classList.toggle('hidden',!state.running);
       $('mapBadgeTitle').textContent=state.running?'Viagem simulada em andamento':(state.dest && state.originReady?'Rota preparada':'Sua cidade, sua corrida');
       $('mapBadgeSubtitle').textContent=state.running?'Motorista virtual · não é uma corrida real':state.dest && state.originReady?`${state.distance.toFixed(1).replace('.',',')} km · ${Math.round(state.duration)} min`:'Ative o GPS ou pesquise um destino';
-      $('passengerPanel').classList.toggle('hidden',state.tab!=='passenger'||!state.dest);
+      $('passengerPanel').classList.toggle('hidden',state.tab!=='passenger'||!state.estimateReady);
       $('financePanel').classList.toggle('hidden',state.tab!=='finance');
       $('adminPanel').classList.toggle('hidden',state.tab!=='admin');
       $('passengerTab').classList.toggle('active',state.tab==='passenger');
@@ -527,6 +527,9 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
       if(activeRouteController)activeRouteController.abort();
       activeRouteController=null;
       state.route=null;
+      state.estimateReady=false;
+      if(!state.dest)state.openAfterEstimate=false;
+      $('estimateStatus').textContent=!state.dest?'':!state.originReady?'Informe o embarque ou use o GPS para calcular o trajeto.':'Calculando distância e tempo…';
       if(!state.dest || !state.originReady){state.distance=7.2;state.duration=18;state.routeQuality='Exemplo';$('manualKm').value=7.2;$('manualMin').value=18;updateMarkers();render();return;}
       updateEstimatedRoute(state.origin,state.dest);updateMarkers();
       const url=`https://router.project-osrm.org/route/v1/driving/${state.origin.lon},${state.origin.lat};${state.dest.lon},${state.dest.lat}?overview=full&geometries=geojson&steps=false`;
@@ -534,7 +537,8 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
         const controller=new AbortController();activeRouteController=controller;
         const response=await fetch(url,{signal:AbortSignal.any([controller.signal,AbortSignal.timeout(9000)])});
         if(!response.ok) throw Error('Sem rota');
-        const d=await response.json();if(seq!==routingSeq||!state.dest||!d.routes?.[0])return;
+        const d=await response.json();if(seq!==routingSeq||!state.dest)return;
+        if(!d.routes?.[0])throw Error('Sem rota');
         const route=d.routes[0];const distance=route.distance/1000,duration=route.duration/60;
         if(!Number.isFinite(distance)||!Number.isFinite(duration)||distance<=0||distance>3000)throw Error('Rota inválida');
         state.distance=Math.max(.5,Math.round(distance*10)/10);state.duration=Math.max(1,Math.round(duration));state.routeQuality='Rota viária';
@@ -543,8 +547,17 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
         state.route={coords:points.map(c=>[c[1],c[0]])};
         $('manualKm').value=state.distance;$('manualMin').value=state.duration;
         updateMarkers();render();
-      }catch(e){ if(seq!==routingSeq)return;state.routeQuality='Aproximada';render(); }
-      finally {if(seq===routingSeq)activeRouteController=null;}
+      }catch(e){ if(seq!==routingSeq)return;updateEstimatedRoute(state.origin,state.dest); }
+      finally {
+        if(seq===routingSeq){
+          activeRouteController=null;
+          state.estimateReady=true;
+          $('estimateStatus').textContent='';
+          render();
+          if(state.openAfterEstimate && state.tab==='passenger')showCarOptions();
+          state.openAfterEstimate=false;
+        }
+      }
     }
     function saveConfirmedAddress(p){
       if(!p||!Number.isFinite(p.lat)||!Number.isFinite(p.lon))return;
@@ -572,9 +585,10 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
       if(requestedNumber&&!p.exactNumber&&!p.manualVerified){p.numberRequested=true;p.requestedNumber=requestedNumber;p.enteredAddress=entered;}
       $('destinationInput').value=p.enteredAddress||p.name;
       hideSuggestions();
-      if(openOptions){$('destinationInput').blur();showCarOptions();}
+      state.openAfterEstimate=openOptions;
+      if(openOptions)$('destinationInput').blur();
       getRoute();
-      toast('Destino selecionado. Calculando estimativa.');if(p.manualVerified)vaigoMessage('Entrada confirmada neste aparelho.');else if(p.exactNumber)vaigoMessage('Número encontrado. Para conferir a entrada, toque em Ver entrada no mapa.');else if(p.numberRequested)vaigoMessage('⚠️ Número não encontrado na base. Arraste o pino de destino até a entrada correta e clique em Confirmar entrada da residência.');else vaigoMessage('Destino escolhido. Você pode arrastar os marcadores para refinar os pontos.');
+      toast(state.originReady?'Destino selecionado. Calculando trajeto.':'Destino selecionado. Informe o embarque ou use o GPS.');if(p.manualVerified)vaigoMessage('Entrada confirmada neste aparelho.');else if(p.exactNumber)vaigoMessage('Número encontrado. Para conferir a entrada, toque em Ver entrada no mapa.');else if(p.numberRequested)vaigoMessage('⚠️ Número não encontrado na base. Arraste o pino de destino até a entrada correta e clique em Confirmar entrada da residência.');else vaigoMessage('Destino escolhido. Você pode arrastar os marcadores para refinar os pontos.');
     }
     function chooseOrigin(p,mode='manual'){
       if(state.running)return;
@@ -750,7 +764,7 @@ function bindSearch(id,field){
     });
     $('vaigoConfirmHouse')?.addEventListener('click',()=>{if(!state.dest){vaigoMessage('Pesquise e selecione primeiro um destino.');return;}state.dest.manualVerified=true;state.dest.exactNumber=false;saveConfirmedAddress(state.dest);state.dest.name=state.dest.enteredAddress||state.dest.name;$('destinationInput').value=state.dest.name;vaigoMessage('✓ Ponto de chegada confirmado manualmente por você. Não houve verificação oficial do número residencial.');toast('Ponto de chegada confirmado no mapa.');});
 $('findAddressButton').addEventListener('click',()=>manualAddressSearch('destination'));
-    function setTab(t){state.tab=t;render();if(window.matchMedia('(max-width:810px)').matches)showSheet(t!=='passenger'||!!state.dest);if(state.map)setTimeout(()=>state.map.invalidateSize(),80);}
+    function setTab(t){state.tab=t;render();if(window.matchMedia('(max-width:810px)').matches)showSheet(t!=='passenger'||!!state.estimateReady);if(state.map)setTimeout(()=>state.map.invalidateSize(),80);}
     function updateConfig(){
       const config={};for(const id of Object.keys(DEFAULT))config[id]=num(id,DEFAULT[id],id==='commission'?0:0,100);
       try{localStorage.setItem('vaigo_config',JSON.stringify(config));}catch(e){}
@@ -844,9 +858,8 @@ $('findAddressButton').addEventListener('click',()=>manualAddressSearch('destina
       state.assignedDriver=null;renderFleet();state.phone='';$('passengerPhone').value='';state.running=false;state.rideStage='idle';state.rideProgress=0;state.lockedFare=null;
       render();toast(`Corrida simulada concluída · passageiro ${money(c.fare)} · motorista ${money(c.driverNet)} após gasolina.`);
     }
-    function setZecaTheme(theme){const t=theme==='dark'?'dark':'light';const changed=document.documentElement.dataset.theme!==t;document.documentElement.dataset.theme=t;if(changed)state.applyBasemap?.();$('lightTheme').setAttribute('aria-pressed',String(t==='light'));$('darkTheme').setAttribute('aria-pressed',String(t==='dark'));try{localStorage.setItem('zeca_theme',t)}catch(e){}}
-    let savedTheme='light';try{savedTheme=localStorage.getItem('zeca_theme')||'light'}catch(e){}
-    setZecaTheme(savedTheme);
+    function setZecaTheme(theme){const t=theme==='dark'?'dark':'light';const changed=document.documentElement.dataset.theme!==t;document.documentElement.dataset.theme=t;if(changed)state.applyBasemap?.();$('lightTheme').setAttribute('aria-pressed',String(t==='light'));$('darkTheme').setAttribute('aria-pressed',String(t==='dark'));}
+    setZecaTheme('dark');
     $('lightTheme').addEventListener('click',()=>setZecaTheme('light'));
     $('darkTheme').addEventListener('click',()=>setZecaTheme('dark'));
     $('settingsShortcut').addEventListener('click',()=>setTab('admin'));
@@ -904,17 +917,17 @@ $('findAddressButton').addEventListener('click',()=>manualAddressSearch('destina
        if(state.map)setTimeout(()=>state.map.invalidateSize(),80);
      }
      function showCarOptions(){
-       if(state.running||!state.dest)return;
+       if(state.running||!state.estimateReady)return;
        setTab('passenger');
      }
      $('showVehicles').addEventListener('click',()=>$('destinationInput').focus());
      $('driverShortcut').addEventListener('click',()=>setTab('finance'));
      topToggle.addEventListener('click',()=>{
-       if(!topPanel.classList.contains('is-collapsed') && state.dest){showCarOptions();return;}
+       if(!topPanel.classList.contains('is-collapsed') && state.estimateReady){showCarOptions();return;}
        showSheet(false,!topPanel.classList.contains('is-collapsed'));
      });
      bottomToggle.addEventListener('click',()=>showSheet(false));
-     showSheet(false,window.matchMedia('(max-width:810px)').matches);
+     showSheet(false);
      // Keep additional tools inside the scrollable lower panel on small screens.
     // Previously the toolbar remained in a full-screen pointer-events:none
     // sidebar layer, where it could visually overlap search and block touches.
