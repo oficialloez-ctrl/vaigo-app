@@ -227,12 +227,12 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
       .brand-row{margin-bottom:8px}
       .address-search input{font-size:16px}
       .panel-body:not(.is-collapsed){max-height:46dvh}
-      .mobile-collapse-btn{width:auto;margin:0 0 8px auto;padding:5px 10px;font-size:11px}
+      .mobile-collapse-btn{width:auto;margin:0 auto 8px 0;padding:5px 10px;font-size:11px}
       .panel-body .mobile-collapse-btn,.panel-top.is-collapsed .mobile-collapse-btn{display:block;width:100%;margin:0 0 7px}
       .panel-body.is-collapsed .mobile-collapse-btn,.panel-top.is-collapsed .mobile-collapse-btn{margin:0}
       #vaigoTools{margin-top:16px}
     }
-    #map .leaflet-tile-pane{filter:saturate(.35) contrast(.82) brightness(1.13)}
+    #map .leaflet-tile-pane{filter:saturate(.65)}
     .pin-you{background:#111;border-color:white}
     @media(max-width:810px){
       .panel-top.is-collapsed{left:14px;right:auto;background:#131819!important;border:0;border-radius:32px;padding:0}
@@ -246,6 +246,8 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
     .fleet-car i{position:absolute;inset:7px 2px 6px;background:linear-gradient(#27323b 0 28%,#c9cfd4 29% 74%,#36414b 75%);border-radius:4px;border-inline:1px solid #626973}
     #fleetStatus{position:absolute;z-index:400;left:16px;bottom:75px;background:var(--white);color:var(--ink);border-radius:18px;padding:6px 10px;font-size:11px;font-weight:650;pointer-events:none}
     @media(max-width:810px){#fleetStatus{top:16px;right:12px;left:auto;bottom:auto}}
+      #tripTools summary{cursor:pointer;padding:12px 16px;font-weight:650;font-size:14px}
+    #tripTools #vaigoTools{margin-top:0}
   </style>
 </head>
 <body>
@@ -281,7 +283,7 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
             <button data-quick="eldorado">Shopping Eldorado</button>
           </div>
         </div>
-        <div id="vaigoTools" style="padding:9px 17px;background:#fff;border-bottom:1px solid #eee;display:flex;gap:6px;flex-wrap:wrap;position:relative;z-index:6">
+        <details id="tripTools"><summary>Mais opções do trajeto</summary><div id="vaigoTools" style="padding:9px 17px;background:#fff;border-bottom:1px solid #eee;display:flex;gap:6px;flex-wrap:wrap;position:relative;z-index:6">
 <button type="button" id="vaigoFavSave" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">☆ Salvar destino</button>
 <button type="button" id="vaigoFavShow" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">★ Favoritos</button>
 <button type="button" id="vaigoPinToggle" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">📍 Ajustar embarque</button>
@@ -289,7 +291,7 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
 <button type="button" id="zoomHouse" style="padding:9px;border:1px solid #bbb;border-radius:8px">Ver entrada no mapa</button>
 <button type="button" id="vaigoConfirmHouse" style="padding:9px;border-radius:8px;border:1px solid #b5d6bb;background:#ecf7ee">✓ Confirmar entrada da residência</button>
 <button type="button" id="vaigoDrivers" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">🚘 Carros disponíveis</button>
-<div id="vaigoToolsMsg" aria-live="polite" style="flex-basis:100%;font-size:11px;color:#666">Números não confirmados devem ser conferidos no mapa. As corridas de demonstração são simuladas.</div></div>
+<div id="vaigoToolsMsg" aria-live="polite" style="flex-basis:100%;font-size:11px;color:#666"></div></div></details>
 <div class="panel-body is-collapsed"><button type="button" id="bottomPanelToggle" class="mobile-collapse-btn" aria-expanded="false">Opções de carro</button>
           <div class="tab-bar" role="tablist" aria-label="Painéis"><button id="passengerTab" role="tab" aria-selected="true" class="active">Passageiro</button><button id="financeTab" role="tab" aria-selected="false">Motorista</button><button id="adminTab" role="tab" aria-selected="false">ADM</button></div>
           <section id="passengerPanel" role="tabpanel" aria-labelledby="passengerTab">
@@ -299,7 +301,7 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
             <div class="field" id="phoneField"><label for="passengerPhone">Telefone para o motorista ligar (opcional)</label><input type="tel" inputmode="tel" id="passengerPhone" placeholder="DDD e número" maxlength="24"></div>
             <div aria-live="polite" id="rideBanner" class="trip-banner hidden"><strong id="rideHeadline">Solicitação em andamento</strong><p id="rideProgressLabel">Motorista virtual a caminho.</p><div class="progress"><span id="rideProgress"></span></div></div>
             <button class="btn-primary" id="requestButton"><span id="requestButtonLabel">Simular corrida · R$ 28,04</span><svg class="ui-icon"><use href="#ico-arrow"/></svg></button>
-            <p class="note">Demonstração independente. Não solicita motoristas nem processa pagamentos reais. Com destino selecionado, a distância é calculada por rota quando o serviço de mapas está disponível.</p>
+            <p class="note">Corrida simulada, sem chamada real ou cobrança.</p>
           </section>
           <section id="financePanel" class="hidden" role="tabpanel" aria-labelledby="financeTab">
             <div class="fare-card"><strong>Disponibilidade no mapa</strong><p class="small-info">Ao ficar disponível, você compartilha sua posição aproximada com passageiros próximos enquanto esta página estiver aberta e visível.</p><button type="button" class="btn-primary" id="liveGps">Ficar disponível</button><p id="liveGpsStatus" class="small-info" aria-live="polite">Você está offline.</p></div>
@@ -445,7 +447,6 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
       let activeLayer, tileDeadline;
       const osm='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
       const providers=[
-        {url:'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',attribution:osm+' · &copy; <a href="https://carto.com/attributions">CARTO</a>'},
         {url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',attribution:osm},
         {url:'https://tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',attribution:osm+' · Humanitarian OpenStreetMap Team'}
       ];
@@ -915,7 +916,7 @@ $('findAddressButton').addEventListener('click',()=>manualAddressSearch('destina
     // Previously the toolbar remained in a full-screen pointer-events:none
     // sidebar layer, where it could visually overlap search and block touches.
     const mobileLayout = window.matchMedia('(max-width:810px)');
-    const toolsBar = document.getElementById('vaigoTools');
+    const toolsBar = document.getElementById('tripTools');
     const lowerPanel = document.querySelector('.panel-body');
     const sidebarInner = document.querySelector('.sidebar-inner');
     function placeToolsBar() {
@@ -953,7 +954,7 @@ async function refreshLiveFleet() {
       const marker = L.marker([Number(driver.lat),Number(driver.lon)],{icon:fleetIcon(Number(driver.heading)),title:'Motorista disponível'}).bindPopup('Motorista disponível · posição aproximada').addTo(state.map);
       liveMarkers.push(marker);
     }
-    badge.textContent = drivers.length ? drivers.length+' disponível(is) nesta região' : 'Nenhum motorista disponível nesta região';
+    badge.textContent = drivers.length ? drivers.length+' disponível(is) nesta região' : 'Nenhum carro disponível';
   } catch {
     if (request === fleetRequest) { clear(); badge.textContent='Disponibilidade temporariamente indisponível'; }
   }
