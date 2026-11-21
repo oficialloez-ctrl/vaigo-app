@@ -1,21 +1,12 @@
 const {createHash} = require('node:crypto');
 
-async function query(sql, params) {
-  const connection = process.env.ZECA_FLEET_DATABASE_URL;
-  const endpoint = new URL(connection);
-  const response = await fetch('https://' + endpoint.hostname + '/sql', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json', 'Neon-Connection-String':connection},
-    body: JSON.stringify({query:sql,params}),
-    signal: AbortSignal.timeout(8000)
-  });
-  if (!response.ok) throw Error('Database unavailable');
-  return (await response.json()).rows;
-}
+const {query} = require('../lib/db');
+const {requireLogin} = require('../lib/session');
 const valid = (n, limit) => typeof n === 'number' && Number.isFinite(n) && Math.abs(n) <= limit;
 module.exports = async (req,res) => {
   res.setHeader('Cache-Control','private, no-store');
   try {
+    if (!await requireLogin(req,res)) return;
     if (req.method === 'GET') {
       const {lat,lon} = req.query;
       if (!lat || !lon || !valid(Number(lat),90) || !valid(Number(lon),180)) return res.status(400).end();

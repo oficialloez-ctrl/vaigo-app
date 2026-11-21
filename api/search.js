@@ -1,3 +1,4 @@
+const {requireLogin} = require('../lib/session');
 const {parseAddress}=require('./_address');
 const cnefe=require('./_cnefe');
 const https=require('https');
@@ -26,6 +27,7 @@ function get(url) {
  });
 }
 module.exports=async(req,res)=>{
+ if(!await requireLogin(req,res))return;
  if(req.method!=='GET')return res.status(405).json({results:[]});
  const q=String(req.query.q||'').trim().slice(0,160),mode=String(req.query.mode||'suggest');
  if(q.length<3)return res.status(400).json({results:[]});
