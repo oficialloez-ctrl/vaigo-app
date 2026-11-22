@@ -62,6 +62,7 @@
     el('loginScreen').hidden=true;app.hidden=false;
     startZeca(user,settings);
     setupAds(user.admin,api);
+    fetch('/api/business-catalog').catch(()=>{});
     let name=user.name||'';
     function greet(){
       const hour=new Date().getHours();
