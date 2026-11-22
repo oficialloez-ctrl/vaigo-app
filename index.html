@@ -806,7 +806,7 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
     function renderAddressResults(results,field,source){
       $('suggestions').hidden=false;
       if(!results.length){$('suggestions').innerHTML='<div class="small-info" style="padding:11px">Endereço não encontrado. Tente o nome da rua, número e cidade ou escolha o destino no mapa.</div>';return;}
-      $('suggestions').innerHTML=results.map((p,i)=>`<button class="suggestion" type="button" data-suggest="${i}" role="option"><span class="suggestion-icon">${p.type==='place'?'🏪':'⌖'}</span><span style="min-width:0"><span class="suggestion-name">${escapeHtml(p.name)}</span><span class="suggestion-hint">${escapeHtml(p.manualVerified?'Entrada confirmada neste aparelho · ':p.exactNumber?'Número encontrado no cadastro · ':p.houseNumber?'📍 Número cadastrado próximo · ':p.numberRequested?'⚠️ Número solicitado não localizado · ':p.type==='place'?'📍 Estabelecimento · ':'Rua / endereço · ')}${escapeHtml(p.hint||'')}${Number.isFinite(p.km)?' · '+p.km.toFixed(1).replace('.',',')+' km':''}</span></span></button>`).join('')+`<div class="small-info" style="padding:6px 10px">Resultados de endereço e locais conhecidos · confira o ponto no mapa antes de solicitar</div>`;
+      $('suggestions').innerHTML=results.map((p,i)=>`<button class="suggestion" type="button" data-suggest="${i}" role="option"><span class="suggestion-icon">${p.type==='place'?'🏪':'⌖'}</span><span style="min-width:0"><span class="suggestion-name">${escapeHtml(p.name)}</span><span class="suggestion-hint">${escapeHtml(p.manualVerified?'Entrada confirmada neste aparelho · ':p.exactNumber?'Número encontrado no cadastro · ':p.type==='place'?'Estabelecimento · ':p.houseNumber?'📍 Número cadastrado próximo · ':p.numberRequested?'⚠️ Número solicitado não localizado · ':'Rua / endereço · ')}${escapeHtml(p.hint||'')}${Number.isFinite(p.km)?' · '+p.km.toFixed(1).replace('.',',')+' km':''}</span></span></button>`).join('')+`<div class="small-info" style="padding:6px 10px">Resultados de endereço e locais conhecidos · confira o ponto no mapa antes de solicitar</div>`;
       document.querySelectorAll('[data-suggest]').forEach(b=>b.addEventListener('click',()=>{const p=results[Number(b.dataset.suggest)];field==='origin'?chooseOrigin(p):chooseDestination(p);}));
     }
     async function searchAddress(query,field){
@@ -818,11 +818,12 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
         const url=new URL('/api/search',location.origin);url.searchParams.set('q',query);url.searchParams.set('mode','suggest');url.searchParams.set('lat',state.origin.lat);url.searchParams.set('lon',state.origin.lon);
         const response=await fetch(url,{signal:state.abort.signal});if(!response.ok)throw Error('Serviço de endereços indisponível');
         const data=await response.json();if(seq!==state.searchSeq)return;
-        const combined=[...localConfirmedAddresses(query),...(data.results||[]).filter(p=>p.exactNumber),...(data.results||[]).filter(p=>!p.exactNumber)].map(p=>({...p,requestedNumber:data.requestedNumber}));if(combined.length)renderAddressResults(combined,field,'Busca local');
-        else showManualSearch(field,data.providerStatus==='unavailable'?'Serviços públicos temporariamente indisponíveis.':'Número ou rua não localizados. Pesquise somente a rua e ajuste o ponto no mapa.');
+        const combined=[...localConfirmedAddresses(query),...(data.results||[]).filter(p=>p.exactNumber),...(data.results||[]).filter(p=>!p.exactNumber)].map(p=>({...p,requestedNumber:p.type==='place'?null:data.requestedNumber}));if(combined.length)renderAddressResults(combined,field,'Busca local');
+        else showManualSearch(field,data.providerStatus==='unavailable'?'Serviços públicos temporariamente indisponíveis.':'Nenhuma sugestão próxima. Tente o nome do comércio e a cidade ou pesquise pelo endereço.');
       }catch(err){if(err.name!=='AbortError'&&seq===state.searchSeq)showManualSearch(field,'Sugestões indisponíveis.');}
     }
     async function manualAddressSearch(field){
+      clearTimeout(state.debounce);
       const query=(field==='origin' ? $('originInput') : $('destinationInput')).value.trim();
       if(query.length<3){toast('Digite uma rua ou lugar para pesquisar.');return;}
       const seq=++state.searchSeq;
@@ -832,12 +833,12 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
         const url=new URL('/api/search',location.origin);url.searchParams.set('q',query);url.searchParams.set('mode','address');url.searchParams.set('lat',state.origin.lat);url.searchParams.set('lon',state.origin.lon);
         const response=await fetch(url,{signal:state.abort.signal});if(!response.ok)throw Error('Não foi possível pesquisar');
         const data=await response.json();if(seq!==state.searchSeq)return;
-        const combined=[...localConfirmedAddresses(query),...(data.results||[]).filter(p=>p.exactNumber),...(data.results||[]).filter(p=>!p.exactNumber)].map(p=>({...p,requestedNumber:data.requestedNumber}));if(combined.length){renderAddressResults(combined,field,'Busca local');if(data.partial)vaigoMessage('Número residencial não confirmado. Escolha a rua e ajuste o pino no mapa antes de confirmar.');}else showManualSearch(field,data.providerStatus==='unavailable'?'Serviços de endereços indisponíveis. Tente novamente.':'Não encontrei esse número. Tente somente o nome da rua e confirme o local no mapa.');
+        const combined=[...localConfirmedAddresses(query),...(data.results||[]).filter(p=>p.exactNumber),...(data.results||[]).filter(p=>!p.exactNumber)].map(p=>({...p,requestedNumber:p.type==='place'?null:data.requestedNumber}));if(combined.length){renderAddressResults(combined,field,'Busca local');if(data.partial&&!combined.some(p=>p.type==='place'))vaigoMessage('Número residencial não confirmado. Escolha a rua e ajuste o pino no mapa antes de confirmar.');}else showManualSearch(field,data.providerStatus==='unavailable'?'Serviços de endereços indisponíveis. Tente novamente.':'Nenhum resultado próximo. Confira o nome do comércio, acrescente a cidade ou escolha o ponto no mapa.');
       }catch(err){if(err.name!=='AbortError'&&seq===state.searchSeq)$('suggestions').innerHTML='<div class="small-info" style="padding:11px">Pesquisa indisponível. Verifique sua conexão e tente novamente.</div>';}
     }
     function showManualSearch(field,message='Sugestões automáticas indisponíveis.'){
       $('suggestions').hidden=false;
-      $('suggestions').innerHTML=`<div class="small-info" style="padding:11px">${escapeHtml(message)}</div><button type="button" class="suggestion" id="manualSearchButton"><span class="suggestion-icon">⌕</span><span><strong>Pesquisar endereço completo</strong><span class="suggestion-hint">Ex.: Rua Maringá 1520, Francisco Beltrão, PR</span></span></button>`;
+      $('suggestions').innerHTML=`<div class="small-info" style="padding:11px">${escapeHtml(message)}</div><button type="button" class="suggestion" id="manualSearchButton"><span class="suggestion-icon">⌕</span><span><strong>Pesquisar comércio ou endereço</strong><span class="suggestion-hint">Digite o nome da empresa ou a rua e o número.</span></span></button>`;
       $('manualSearchButton').addEventListener('click',()=>manualAddressSearch(field));
     }
     

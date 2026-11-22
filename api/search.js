@@ -26,6 +26,16 @@ function get(url) {
   request.on('error',reject);
  });
 }
+const placeCategories=new Set(['shop','amenity','tourism','office','craft','leisure','healthcare','industrial','commercial']);
+function searchPoint({label,category,road,number,area,city,state,description,lat,lon},house){
+ if(lat==null||lon==null||!Number.isFinite(+lat)||!Number.isFinite(+lon))return null;
+ const isPlace=Boolean(label)&&placeCategories.has(category);
+ const address=[road,number].filter(Boolean).join(', ');
+ const name=isPlace?label:(road&&number?address:label||road||description?.split(',')[0]);
+ if(!name)return null;
+ const hint=[address,area,city,state].filter(Boolean).join(', ')||description||'';
+ return {name,hint,lat:+lat,lon:+lon,type:isPlace?'place':'address',houseNumber:number?String(number):null,numberRequested:!isPlace&&!!house};
+}
 module.exports=async(req,res)=>{
  if(!await requireLogin(req,res))return;
  if(req.method!=='GET')return res.status(405).json({results:[]});
@@ -55,12 +65,22 @@ module.exports=async(req,res)=>{
  const settled=await Promise.allSettled(tasks);
  const found=[];
  for(const item of settled){if(item.status!=='fulfilled')continue;const {kind,data}=item.value;
-  if(kind==='photon')for(const feature of data.features||[]){const p=feature.properties||{},c=feature.geometry?.coordinates||[];if(!Number.isFinite(+c[0])||!Number.isFinite(+c[1]))continue;const number=String(p.housenumber||'').trim();found.push({name:number&&p.street?p.street+', '+number:p.name||p.street||'Local',hint:[p.street,p.city||p.county,p.state].filter(Boolean).join(', '),lat:+c[1],lon:+c[0],type:['shop','amenity','tourism','office'].includes(p.osm_key)?'place':'address',houseNumber:number||null,numberRequested:!!house});}
-  if(kind==='nominatim')for(const p of data||[]){if(!Number.isFinite(+p.lat)||!Number.isFinite(+p.lon))continue;const number=String(p.address?.house_number||'').trim();found.push({name:number&&p.address?.road?p.address.road+', '+number:p.name||p.display_name?.split(',').slice(0,2).join(', ')||'Endereço',hint:p.display_name||'',lat:+p.lat,lon:+p.lon,type:p.class==='highway'?'address':'place',houseNumber:number||null,numberRequested:!!house});}
+  if(kind==='photon')for(const feature of data.features||[]){
+   const p=feature.properties||{}, [lon,lat]=feature.geometry?.coordinates||[];
+   const point=searchPoint({label:p.name,category:p.osm_key,road:p.street,number:p.housenumber,area:p.district,city:p.city||p.county,state:p.state,lat,lon},house);
+   if(point)found.push(point);
+  }
+  if(kind==='nominatim')for(const p of data||[]){
+   const a=p.address||{},category=p.category||p.class;
+   const point=searchPoint({label:p.name||a[category],category,road:a.road||a.pedestrian,number:a.house_number,area:a.suburb||a.neighbourhood,city:a.city||a.town||a.village||a.municipality,state:a.state,description:p.display_name,lat:p.lat,lon:p.lon},house);
+   if(point)found.push(point);
+  }
  }
  found.unshift(...local);
  const seen=new Set();
- const ranked=found.map(p=>{const tokens=norm(p.name+' '+p.hint).split(/[^\p{L}\p{N}]+/u);const hits=streetTerms.filter(t=>tokens.includes(t)).length;const match=streetTerms.length?hits/streetTerms.length:1;const km=distance(lat,lon,p.lat,p.lon);const inCity=!!preferredCity&&norm(p.hint).includes(preferredCity);const roadKey=value=>norm(value).replace(/^(rua|r\.?|avenida|av\.?|travessa|tv\.?)\s+/,'').replace(/[^\p{L}\p{N}]+/gu,' ').trim();const exact=!!house&&p.houseNumber===house&&roadKey(p.name.split(',')[0])===roadKey(street)&&(!city||inCity);const numberDiff=house&&p.houseNumber&&/^\d+$/.test(p.houseNumber)?Math.abs(+p.houseNumber-+house):null;return {...p,km,exactNumber:exact,_match:match,_rank:match*100+(p.source==='IBGE CNEFE 2022'?120:0)+(inCity?70:0)+(exact?85:0)+(numberDiff!==null?Math.max(0,20-numberDiff/30):0)-Math.min(km,100)*.8}}).filter(p=>p._match>=.5&&(!hasCoords||p.km<80)).sort((a,b)=>b._rank-a._rank).filter(p=>{const id=p.source==='IBGE CNEFE 2022'?[p.name,p.hint,p.lat,p.lon].join('|'):norm(p.name)+'|'+(norm(p.hint).includes('francisco beltrao')?'francisco beltrao':norm(p.hint).split(',').slice(-2).join(','))+'|'+(p.houseNumber||'')+'|'+(p.type==='place'?p.lat.toFixed(3)+'|'+p.lon.toFixed(3):'');if(seen.has(id))return false;seen.add(id);return true}).slice(0,15).map(({_rank,_match,...p})=>p);
+ const ranked=found.map(p=>{const tokens=norm(p.name+' '+p.hint).split(/[^\p{L}\p{N}]+/u);const placeWords=p.type==='place'?norm(p.name).split(/[^\p{L}\p{N}]+/u):[];
+ const hits=streetTerms.filter(t=>tokens.includes(t)||placeWords.some(w=>w.startsWith(t))).length;
+ const nameMatch=placeWords.length&&streetTerms.length&&streetTerms.every(t=>placeWords.some(w=>w.startsWith(t)));const match=streetTerms.length?hits/streetTerms.length:1;const km=distance(lat,lon,p.lat,p.lon);const inCity=!!preferredCity&&norm(p.hint).includes(preferredCity);const roadKey=value=>norm(value).replace(/^(rua|r\.?|avenida|av\.?|travessa|tv\.?)\s+/,'').replace(/[^\p{L}\p{N}]+/gu,' ').trim();const exact=p.type!=='place'&&!!house&&p.houseNumber===house&&roadKey(p.name.split(',')[0])===roadKey(street)&&(!city||inCity);const numberDiff=house&&p.houseNumber&&/^\d+$/.test(p.houseNumber)?Math.abs(+p.houseNumber-+house):null;return {...p,km,exactNumber:exact,_match:match,_rank:match*100+(nameMatch?65:0)+(p.source==='IBGE CNEFE 2022'?120:0)+(inCity?70:0)+(exact?85:0)+(numberDiff!==null?Math.max(0,20-numberDiff/30):0)-Math.min(km,100)*.8}}).filter(p=>p._match>=.5&&(!hasCoords||p.km<80)).sort((a,b)=>b._rank-a._rank).filter(p=>{const id=p.source==='IBGE CNEFE 2022'?[p.name,p.hint,p.lat,p.lon].join('|'):norm(p.name)+'|'+(norm(p.hint).includes('francisco beltrao')?'francisco beltrao':norm(p.hint).split(',').slice(-2).join(','))+'|'+(p.houseNumber||'')+'|'+(p.type==='place'?p.lat.toFixed(3)+'|'+p.lon.toFixed(3):'');if(seen.has(id))return false;seen.add(id);return true}).slice(0,15).map(({_rank,_match,...p})=>p);
  const result={results:ranked,numberFound:!!house&&ranked.some(p=>p.exactNumber),requestedNumber:house,partial:!!house&&!ranked.some(p=>p.exactNumber),providerStatus:local.length||settled.some(x=>x.status==='fulfilled')?'ok':'unavailable'};
  if(cache.size>400)cache.clear();cache.set(key,{at:Date.now(),data:result});
  return res.status(200).json(result);
