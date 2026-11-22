@@ -1,7 +1,7 @@
 function setupAds(admin,api){
   const el=id=>document.getElementById(id);
   const carousel=el('adCarousel'),dots=el('adDots'),image=el('adImage');
-  let rotation,slides=[],index=0,draft=[],revision='',dirty=false,loading=false;
+  let rotation,slides=[],index=0,draft=[],revision='',dirty=false,loading=false,editing=false;
   function select(i){
     index=i;
     image.src=slides[i];
@@ -33,6 +33,13 @@ function setupAds(admin,api){
         const b=document.createElement('button');b.type='button';b.textContent=label;
         b.onclick=()=>{fn();dirty=true;preview();};row.append(b);
       }
+      const replace=document.createElement('button'),picker=document.createElement('input');
+      picker.type='file';picker.accept=el('adFile').accept;picker.hidden=true;
+      replace.type='button';replace.textContent='Trocar imagem';
+      replace.setAttribute('aria-label','Trocar imagem '+(i+1));
+      replace.onclick=()=>picker.click();
+      picker.onchange=()=>importImage(picker,i);
+      row.append(replace,picker);
       if(i)action('Mover antes',()=>{[draft[i-1],draft[i]]=[draft[i],draft[i-1]];});
       action('Remover',()=>{draft.splice(i,1);if(!draft.length)el('adVisible').checked=false;});
       list.append(row);
@@ -44,7 +51,7 @@ function setupAds(admin,api){
     try{
       const cfg=await api('ads');
       display(cfg);
-      if(admin&&!dirty){
+      if(admin&&!dirty&&!editing){
         draft=[...cfg.images];revision=cfg.revision;el('adVisible').checked=cfg.visible;
         preview();el('adFields').disabled=false;
       }
@@ -55,11 +62,12 @@ function setupAds(admin,api){
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh();});
   if(!admin)return;
   el('adVisible').onchange=()=>{dirty=true;};
-  el('adFile').onchange=async event=>{
-    const file=event.target.files[0];if(!file)return;
-    const url=URL.createObjectURL(file);el('adFields').disabled=true;
+  el('adFile').onchange=()=>importImage(el('adFile'));
+  async function importImage(input,slot){
+    const file=input.files[0];if(!file)return;
+    editing=true;const url=URL.createObjectURL(file);el('adFields').disabled=true;
     try{
-      if(draft.length>=6)throw Error('O carrossel comporta até seis imagens.');
+      if(slot===undefined&&draft.length>=6)throw Error('O carrossel comporta até seis imagens.');
       const pic=new Image();pic.src=url;await pic.decode();
       const scale=Math.min(1,960/pic.naturalWidth,440/pic.naturalHeight);
       const canvas=document.createElement('canvas');
@@ -68,9 +76,10 @@ function setupAds(admin,api){
       let src=canvas.toDataURL('image/jpeg',0.82);
       if(src.length>170000)src=canvas.toDataURL('image/jpeg',0.5);
       if(src.length>170000)throw Error('Selecione uma imagem menor.');
-      draft.push(src);dirty=true;preview();el('adStatus').textContent='Imagem pronta para salvar.';
+      if(slot===undefined)draft.push(src);else draft[slot]=src;
+      dirty=true;preview();el('adStatus').textContent='Imagem pronta para salvar.';
     }catch(e){el('adStatus').textContent=e.message||'Não foi possível abrir a imagem.';}
-    finally{URL.revokeObjectURL(url);event.target.value='';el('adFields').disabled=false;}
+    finally{editing=false;URL.revokeObjectURL(url);input.value='';el('adFields').disabled=false;}
   };
   el('adSave').onclick=async()=>{
     el('adFields').disabled=true;
