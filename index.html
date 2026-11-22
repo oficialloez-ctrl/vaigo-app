@@ -243,7 +243,7 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
       .panel-body.is-collapsed{left:0;right:0;bottom:0;max-height:none!important;border-radius:22px 22px 0 0;padding:12px 18px max(18px,env(safe-area-inset-bottom))!important}
       .panel-body.is-collapsed:before{content:'';display:block;width:42px;height:4px;border-radius:3px;margin:0 auto 10px;background:#aab4be}
       .panel-body.is-collapsed .mobile-collapse-btn{font-size:17px;padding:12px}
-      .map-pane .leaflet-control-attribution{position:fixed;bottom:94px;right:0}
+
     }
     .fleet-car{display:block;position:relative;width:18px;height:34px;border-radius:7px 7px 6px 6px;border:1px solid #65707b;background:linear-gradient(90deg,#929aa2,#f9fafb 26%,#e1e5e9 75%,#939ba2);box-shadow:1px 2px 4px #1116}
     .fleet-car i{position:absolute;inset:7px 2px 6px;background:linear-gradient(#27323b 0 28%,#c9cfd4 29% 74%,#36414b 75%);border-radius:4px;border-inline:1px solid #626973}
@@ -323,6 +323,12 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
       .panel-top .brand-row{margin:0 0 12px}
       #topPanelToggle[aria-expanded="true"]{top:0}
     }
+    #preferences .theme-switch{display:inline-flex;width:fit-content;max-width:100%;align-items:center}
+    #preferences .theme-switch button{margin:0;min-height:44px;padding:6px 12px;border:0;background:transparent}
+    #preferences .theme-switch button[aria-pressed="true"]{background:var(--white);color:var(--ink);font-weight:700}
+    #mapCredits{flex:none;text-align:center;background:var(--white);color:var(--muted);font-size:12px;line-height:1.4;pointer-events:auto}
+    #mapCredits:not(:empty){padding:3px 8px}
+    #mapCredits a{color:inherit;text-decoration:underline}
   </style>
 </head>
 <body>
@@ -403,6 +409,7 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
             <div class="history"><div class="section-title"><h2>Corridas simuladas</h2><small id="historyCount">0 registros</small></div><div id="tripHistory" class="small-info">Nenhuma corrida concluída ainda.</div></div>
           </section>
         </div>
+        <footer id="mapCredits" aria-label="Créditos do mapa"></footer>
       </div>
     </aside>
     <main class="map-pane" aria-label="Mapa e rota">
@@ -428,6 +435,7 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
 <div id="vaigoToolsMsg" aria-live="polite" style="flex-basis:100%;font-size:11px;color:#666"></div></div><button class="linkish" id="resetRouteButton">Limpar rota</button></section></dialog>
   <div id="toast" role="status" aria-live="polite" class="toast"></div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/leaflet-rotate@0.6.2/dist/leaflet-rotate.js" crossorigin="anonymous"></script>
   <script>
   function startZeca(account,settings) {
     'use strict';
@@ -552,9 +560,9 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
     function leafIcon(kind) { const html=kind==='you'?'<div class="pin-you"></div>':kind==='dest'?'<div class="pin-dest">▣</div>':'<div class="pin-car">🚙</div>';return L.divIcon({html,iconSize:kind==='you'?[17,17]:kind==='dest'?[30,30]:[37,37],iconAnchor:kind==='you'?[9,9]:kind==='dest'?[15,25]:[18,18],className:''}); }
     function initMap() {
       if(!window.L) { $('mapFallback').style.display='flex'; $('mapBadgeTitle').textContent='Calculadora disponível'; return; }
-      state.map=L.map('map',{zoomControl:false,scrollWheelZoom:true}).setView([state.origin.lat,state.origin.lon],15);
+      state.map=L.map('map',{zoomControl:false,scrollWheelZoom:true,rotate:true,touchRotate:true,touchZoom:true,rotateControl:false,shiftKeyRotate:false,pitchDrag:false,attributionControl:false}).setView([state.origin.lat,state.origin.lon],15);
       let activeLayer, tileDeadline;
-      const osm='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+      const osm='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>';
       const providers=[
         {url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',attribution:osm},
         {url:'https://tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',attribution:osm+' · Humanitarian OpenStreetMap Team'}
@@ -563,6 +571,7 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
         clearTimeout(tileDeadline);
         if(activeLayer)state.map.removeLayer(activeLayer);
         const provider=providers[index];
+        $('mapCredits').innerHTML=provider.attribution;
         const layer=L.tileLayer(provider.url,{maxNativeZoom:19,maxZoom:20,attribution:provider.attribution});
         activeLayer=layer;
         let loaded=0,failures=0,switched=false;
