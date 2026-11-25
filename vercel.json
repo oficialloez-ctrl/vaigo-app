@@ -2,7 +2,17 @@
   "version": 2,
   "functions": {
     "api/search.js": {
-      "maxDuration": 20
+      "maxDuration": 20,
+      "includeFiles": "data/cnefe/*.json.gz"
+    },
+    "api/business-catalog.js": {
+      "maxDuration": 60
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/business-catalog",
+      "schedule": "15 8 * * *"
+    }
+  ]
 }

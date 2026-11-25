@@ -1,16 +1,21 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#111111" />
-  <meta name="description" content="VaiGo — protótipo de mobilidade com GPS ao vivo e estimativas transparentes de tarifas, ganhos e combustível." />
+  <meta name="theme-color" content="#080e09" />
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/assets/zeca-180.png?v=2">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>ZECA — Sua mobilidade</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/zeca-icon.svg?v=2" />
+  <meta name="description" content="ZECA — protótipo de mobilidade com GPS ao vivo e estimativas transparentes de tarifas, ganhos e combustível." />
   
   
   <link rel="preconnect" href="https://server.arcgisonline.com" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous" />
   <style>
-    :root { --black:#111111; --ink:#18191a; --muted:#75777b; --sub:#a1a1a6; --line:#e8e8e8; --fill:#f5f5f5; --white:#fff; --green:#16844a; --red:#bc3131; --shadow:0 16px 48px rgba(0,0,0,.14); font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color:var(--ink); }
+    :root { --black:#111111; --ink:#18191a; --muted:#75777b; --sub:#a1a1a6; --line:#e8e8e8; --fill:#f5f5f5; --white:#fff; --green:#26b83e; --red:#bc3131; --shadow:0 16px 48px rgba(0,0,0,.14); font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color:var(--ink); }
     * { box-sizing:border-box; }
     html, body { margin:0; width:100%; height:100%; overflow:hidden; }
     button, input, select { font:inherit; }
@@ -37,7 +42,9 @@
     .address-search { height:49px; flex:1; display:flex; align-items:center; background:#f4f4f4; border-radius:9px; min-width:0; border:1px solid transparent; transition:border .15s; }
     .address-search:focus-within { background:#fff; border:1px solid #aaa; }
     .address-search input { border:0; background:transparent; outline:0; min-width:0; flex:1; padding:0 13px; font-size:14px; color:#171717; height:100%; font-weight:500; text-overflow:ellipsis; }
-    .address-search input::placeholder { color:#8d8d8d; }
+    .address-clear {border:0;background:transparent;color:#666;cursor:pointer;font-size:22px;line-height:1;padding:5px 12px;flex:none;}
+     .address-clear:hover {color:#111;}
+     .address-search input::placeholder { color:#8d8d8d; }
     .mini-button { width:44px; height:45px; flex:0 0 44px; border:none; border-radius:9px; background:#f3f3f3; display:grid; place-items:center; color:#111; }
     .mini-button:hover { background:#e5e5e5; }
     .mini-button.active { background:#e3f3e9; color:#147b43; }
@@ -53,7 +60,7 @@
     .suggestion:hover, .suggestion:focus { background:#f4f4f4; }
     .suggestion-icon { width:29px; height:29px; border-radius:50%; background:#eee; display:grid; place-items:center; flex:0 0 auto; }
     .suggestion-name { font-size:13px; font-weight:680; display:block; }
-    .suggestion-hint { display:block; font-size:11px; color:#777; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:270px; }
+    .suggestion-hint { display:block; font-size:11px; color:#777; margin-top:2px; white-space:normal; overflow-wrap:anywhere; max-width:100%; }
     .small-info { color:var(--muted); font-size:11px; line-height:1.5; }
     .quick-dest { display:flex; flex-wrap:wrap; gap:7px; padding-top:14px; }
     .quick-dest button { background:#f6f6f6; border:1px solid #ededed; padding:9px 10px; border-radius:999px; font-size:11px; font-weight:620; }
@@ -160,10 +167,199 @@
       .map-control { width:43px; height:43px; }
     }
     @media(max-width:430px) { .quick-dest button:nth-child(3) { display:none; } .v-sub { font-size:10px; } .panel-body { max-height:54dvh; } .floating-map-ctrls { bottom:calc(54dvh + 30px); } }
-    @media(prefers-reduced-motion:reduce) { * { scroll-behavior:auto!important; transition:none!important; animation:none!important; } }
+    .mobile-collapse-btn{display:none}
+     @media(max-width:810px){
+       .mobile-collapse-btn{display:block;width:100%;padding:10px;border:1px solid #dcdfe2;border-radius:10px;background:#f7f8f9;color:#23272b;font-size:12px;font-weight:750;margin-bottom:8px}
+       .panel-top.is-collapsed > :not(.mobile-collapse-btn){display:none!important}
+       .panel-top.is-collapsed{max-height:65px;overflow:visible}
+       .panel-body.is-collapsed{max-height:60px!important;overflow:hidden!important;padding:9px 15px!important}
+       .panel-body.is-collapsed > :not(.mobile-collapse-btn){display:none!important}
+       .floating-map-ctrls{bottom:90px!important}
+     }
+     html[data-theme="dark"] .mobile-collapse-btn{background:#28332e;color:#f3f6f4;border-color:#43514a}
+     @media(prefers-reduced-motion:reduce) { * { scroll-behavior:auto!important; transition:none!important; animation:none!important; } }
+
+.theme-switch{display:flex;gap:3px;padding:3px;border-radius:9px;background:#eee}
+.theme-switch button{border:0;background:transparent;padding:7px;border-radius:6px;font-size:12px;cursor:pointer}
+.theme-switch button[aria-pressed="true"]{background:#fff;color:#111}
+html[data-theme="dark"]{color-scheme:dark;--ink:#eef4ee;--muted:#b2bdb4;--line:#36423a;--fill:#232c25;--white:#151c17;--green:#67f37b}
+html[data-theme="dark"] body,html[data-theme="dark"] .app,html[data-theme="dark"] .sidebar,html[data-theme="dark"] .panel-top,html[data-theme="dark"] .panel-body,html[data-theme="dark"] #vaigoTools{background:#151c17!important;color:#eef4ee!important}
+html[data-theme="dark"] .brand,html[data-theme="dark"] h1,html[data-theme="dark"] h2,html[data-theme="dark"] h3{color:#eef4ee}
+html[data-theme="dark"] .address-search,html[data-theme="dark"] .mini-button,html[data-theme="dark"] .quick-dest button,html[data-theme="dark"] .tab-bar,html[data-theme="dark"] .vehicle,html[data-theme="dark"] .fare-card,html[data-theme="dark"] .route-stats,html[data-theme="dark"] .field input,html[data-theme="dark"] .demo-chip,html[data-theme="dark"] .profile-dot,html[data-theme="dark"] .suggestions,html[data-theme="dark"] .suggestion,html[data-theme="dark"] .input-info{background:#232d26!important;color:#edf5ed!important;border-color:#39473d!important}
+html[data-theme="dark"] input,html[data-theme="dark"] select{color:#edf5ed!important}
+html[data-theme="dark"] .suggestion:hover,html[data-theme="dark"] .vehicle.selected,html[data-theme="dark"] .tab-bar button.active{background:#354a3a!important;color:#fff!important}
+html[data-theme="dark"] .btn-primary{background:#43c95a;color:#071208}
+html[data-theme="dark"] .theme-switch{background:#2d3930}
+html[data-theme="dark"] .theme-switch button{color:#cbd9cd}
+html[data-theme="dark"] .theme-switch button[aria-pressed="true"]{background:#496b4f;color:white}
+@media(max-width:480px){.demo-chip{display:none}.theme-switch button{font-size:11px;padding:6px}}
+
+/* Barra de ferramentas: respeita o tema, inclusive estilos inline dos botões */
+html[data-theme="dark"] #vaigoTools {border-bottom-color:#36423a!important}
+html[data-theme="dark"] #vaigoTools button {background:#263229!important;border:1px solid #465649!important;color:#eaf5ec!important;transition:background .15s,border-color .15s}
+html[data-theme="dark"] #vaigoTools button:hover {background:#344739!important;border-color:#6ddc7e!important}
+html[data-theme="dark"] #vaigoTools #vaigoUseGPS,
+html[data-theme="dark"] #vaigoTools #vaigoConfirmHouse {background:#203b29!important;border-color:#418a53!important;color:#a9ffb7!important}
+html[data-theme="dark"] #vaigoTools #vaigoToolsMsg {color:#b7c9ba!important}
+@media(max-width:810px){
+  html[data-theme="dark"] .sidebar{background:transparent!important}
+}
+html[data-theme="dark"] :is(.map-badge,.map-control,.map-tip,.map-fallback div,.suggestion-icon){background:#263229;color:#edf5ed}
+html[data-theme="dark"] .map-fallback{background:#19241d}
+html[data-theme="dark"] :is(.linkish,.address-clear,.stat-small,.suggestion-hint,.v-sub,.v-price small,.field label,.note,.tab-bar button,.section-title small,.map-badge small,.route-label,.status){color:#c4d2c8}
+html[data-theme="dark"] :is(.brand-point,.route-rail::before,.route-rail::after){background:#92e4aa}
+
+html[data-theme="dark"] .leaflet-overlay-pane path{stroke:#8cf4a5}
+html[data-theme="dark"] .leaflet-container{background:#222a26}
+    #showVehicles{display:flex;align-items:center;gap:.45em;background:none;border:0;color:inherit;font:inherit;letter-spacing:inherit;text-align:left;padding:0}
+    #showVehicles span{color:#128555;font-size:.75em}
+    .panel-top,.panel-body{border:1px solid var(--line)}
+    .address-search{border:1px solid var(--line);border-radius:12px}
+    .vehicle{border-radius:14px}
+    .vehicle.selected,html[data-theme="dark"] .vehicle.selected{border-color:#289c68!important}
+    .vehicle.selected .car-picture{border-radius:10px;background:#25985c19}
+    .pin-you{background:#148256}
+    .pin-dest{border-radius:50% 50% 50% 5px;background:#165b42}
+    #map .leaflet-overlay-pane .trip-line{stroke:#168057}
+    html[data-theme="dark"] #map .trip-line{stroke:#75eeb0}
+    html[data-theme="dark"] #map .leaflet-tile-pane{filter:brightness(.78) saturate(.75)}
+    .mobile-collapse-btn{letter-spacing:.01em}
+    @media(max-width:810px){
+      .panel-top,.panel-body{border-radius:20px;box-shadow:0 6px 28px #14291f30}
+      .panel-top{padding:12px 14px}
+      .brand-row{margin-bottom:8px}
+      .address-search input{font-size:16px}
+      .panel-body:not(.is-collapsed){max-height:46dvh}
+      .mobile-collapse-btn{width:auto;margin:0 auto 8px 0;padding:5px 10px;font-size:11px}
+      .panel-body .mobile-collapse-btn,.panel-top.is-collapsed .mobile-collapse-btn{display:block;width:100%;margin:0 0 7px}
+      .panel-body.is-collapsed .mobile-collapse-btn,.panel-top.is-collapsed .mobile-collapse-btn{margin:0}
+      #vaigoTools{margin-top:16px}
+    }
+    #map .leaflet-tile-pane{filter:saturate(.65)}
+    .pin-you{background:#111;border-color:white}
+    @media(max-width:810px){
+      .panel-top.is-collapsed{left:14px;right:auto;background:#131819!important;border:0;border-radius:32px;padding:0}
+      .panel-top.is-collapsed .mobile-collapse-btn{background:transparent;color:white;border:0;padding:13px 20px;margin:0}
+      .panel-body.is-collapsed{left:0;right:0;bottom:0;max-height:none!important;border-radius:22px 22px 0 0;padding:12px 18px max(18px,env(safe-area-inset-bottom))!important}
+      .panel-body.is-collapsed:before{content:'';display:block;width:42px;height:4px;border-radius:3px;margin:0 auto 10px;background:#aab4be}
+      .panel-body.is-collapsed .mobile-collapse-btn{font-size:17px;padding:12px}
+
+    }
+    .fleet-car{display:block;position:relative;width:18px;height:34px;border-radius:7px 7px 6px 6px;border:1px solid #65707b;background:linear-gradient(90deg,#929aa2,#f9fafb 26%,#e1e5e9 75%,#939ba2);box-shadow:1px 2px 4px #1116}
+    .fleet-car i{position:absolute;inset:7px 2px 6px;background:linear-gradient(#27323b 0 28%,#c9cfd4 29% 74%,#36414b 75%);border-radius:4px;border-inline:1px solid #626973}
+    #fleetStatus{position:absolute;z-index:400;left:16px;bottom:75px;background:var(--white);color:var(--ink);border-radius:18px;padding:6px 10px;font-size:11px;font-weight:650;pointer-events:none}
+    @media(max-width:810px){#fleetStatus{top:16px;right:12px;left:auto;bottom:auto}}
+      #tripTools summary{cursor:pointer;padding:12px 16px;font-weight:650;font-size:14px}
+    #tripTools #vaigoTools{margin-top:0}
+  #driverShortcut{display:none}
+    @media(max-width:810px){
+      .sidebar .sidebar-inner{position:absolute;inset:auto 0 0;display:flex;flex-direction:column;align-items:stretch;height:auto;max-height:90dvh;overflow:visible;gap:4px}
+      .sidebar-inner .panel-top,.sidebar-inner .panel-body{position:relative;inset:auto;margin:0;background:var(--white);border-radius:20px 20px 0 0}
+      .sidebar-inner .panel-top{max-height:65dvh;padding-bottom:max(12px,env(safe-area-inset-bottom))}
+      .sidebar-inner .panel-top.is-collapsed{align-self:flex-start;margin-left:12px;border-radius:24px}
+      .sidebar-inner .panel-body:not(.is-collapsed){max-height:55dvh;padding-bottom:max(15px,env(safe-area-inset-bottom))}
+      body:not(.show-lower-panel) .panel-body{display:none}
+      #driverShortcut{display:inline-block}
+    }
+  [hidden]{display:none!important}
+    #loginScreen{min-height:100dvh;display:grid;place-items:center;padding:20px;background:#111915;color:#f4f6f4}
+    #loginForm{width:min(100%,360px);display:grid;gap:14px;padding:25px;background:#1c2921;border:1px solid #3b5241;border-radius:20px}
+    #loginForm h1,#loginForm p{margin:0}#loginForm label,#codeRow label{display:block;font-size:14px}
+    #loginForm input,#grantEmail{width:100%;font-size:16px;padding:12px;border:1px solid #69806e;border-radius:9px}
+    #mapPickButton{width:auto;flex-basis:auto;font-size:12px;padding:0 8px}
+    #mapPickButton.active{outline:2px solid #45c885}
+    .vehicle[data-vehicle="eco"] .car-picture{background:#35ac9724}
+    .vehicle[data-vehicle="comfort"] .car-picture{background:#c49b522b}
+    .vehicle[data-vehicle="xl"] .car-picture{background:#6a9ddd2e}
+    .car-picture{border-radius:9px}
+    #ownerGrants li{margin:6px 0;overflow-wrap:anywhere}
+  #loginScreen{position:fixed;inset:0;overflow:auto;min-height:0}
+    #authActions{display:flex;flex-wrap:wrap;gap:10px}
+    #authActions button,#changeEmail{background:transparent;color:#adf4c3;border:0;padding:5px 0;text-align:left}
+    #topPanelToggle[aria-expanded="true"]{min-width:44px;min-height:44px;font-size:24px;line-height:1}
+  @media(max-width:810px){
+      #topPanelToggle[aria-expanded="true"]{position:sticky;top:-12px;z-index:3;margin:0 auto;width:72px;height:30px;min-height:30px;border:0;background:transparent;touch-action:none}
+      #topPanelToggle[aria-expanded="true"]::after{content:'';display:block;margin:auto;width:38px;height:4px;border-radius:4px;background:#939b98}
+      #topPanelToggle{touch-action:none}
+    }
+    #recentRides>div{position:relative;padding:9px 8px 9px 31px;border-bottom:1px solid var(--line)}
+    #recentRides>div::before{content:'◷';position:absolute;left:5px;top:12px;color:var(--muted)}
+    #recentRides strong,#recentRides small{display:block}#recentRides small{color:var(--muted)}
+    #adCarousel{margin:10px auto 0;max-width:480px}#adImage{display:block;width:100%;height:clamp(72px,12vh,100px);object-fit:contain;border-radius:10px;background:#151a17}
+    #adDots{display:flex;justify-content:center}#adDots button{border:0;background:transparent;padding:8px;cursor:pointer}
+    #adDots button::after{content:'';display:block;background:#8a928e;width:7px;height:7px;border-radius:50%}#adDots button[aria-current="true"]::after{background:#36ac72}
+    #adsEditor summary{padding:12px 0;cursor:pointer}#adFields{display:grid;gap:10px;border:0;padding:8px 0}
+    #adPreview>div{display:flex;align-items:center;gap:8px;margin:6px 0}#adPreview img{width:70px;height:40px;object-fit:contain}
+  .greeting{display:flex;align-items:baseline;justify-content:center;gap:10px;margin:6px 0 12px}.greeting strong{font-size:19px}.greeting button{font-size:11px}#greetingForm{padding:0 0 12px}#greetingForm label{display:block;margin-bottom:4px}#greetingForm input{max-width:68%;padding:6px}
+  .greeting{justify-content:flex-start}
+    #openPreferences{min-width:44px;min-height:44px}
+    #preferences{background:var(--white);color:var(--ink);border:1px solid var(--line);border-radius:18px;padding:18px;width:min(92vw,420px);max-height:82dvh;overflow:auto;margin:auto}
+    #preferences::backdrop{background:#080d0bc4}
+    #preferences header{display:flex;align-items:center;justify-content:space-between}
+    #preferences section{border-top:1px solid var(--line);margin-top:12px;padding-top:12px}
+    #preferences h3{font-size:14px;margin:0 0 7px}
+    #preferences button{border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:var(--fill);color:var(--ink);font-size:14px;margin:2px;text-decoration:none}
+    #preferences #driverShortcut{display:inline-block}
+    #preferences #vaigoTools{padding:4px 0!important;background:transparent!important;border:none;margin:0}
+    #preferences #gpsStatus{display:block;margin:4px}
+
+    .passenger-heading{display:flex;gap:10px;align-items:center;min-width:0;font-size:18px}
+    .passenger-heading img{flex:none}
+    #tripGreeting{overflow-wrap:anywhere}
+    .panel-top .inputs{padding:0;gap:9px}
+    .panel-top .address-search{height:48px;border-radius:14px;overflow:hidden}
+    .panel-top input:placeholder-shown + .address-clear{display:none}
+    .panel-top #gpsButton,#findAddressButton{position:static;flex:0 0 44px;width:44px;height:44px;display:grid;place-items:center;border:0;background:transparent;color:inherit;cursor:pointer}
+    .panel-top .address-search:focus-within{outline:2px solid #45ae66;outline-offset:1px}
+    html[data-theme="dark"] .panel-top .address-row:last-child .address-search{border-color:#488959!important}
+    #destinationInput::placeholder{color:var(--ink);font-weight:650;opacity:1}
+    #mapPickButton{display:inline-flex;align-items:center;gap:8px;height:44px;border:0;background:transparent;color:var(--ink);font-size:14px}
+    html[data-theme="dark"] #mapPickButton{background:transparent!important}
+    #mapPickButton svg{color:#38ad68;width:18px}
+    html[data-theme="dark"] #map .leaflet-tile-pane{filter:invert(1) hue-rotate(165deg) saturate(.55) brightness(.84) contrast(.92)}
+    .pin-you{background:#346df4;box-shadow:0 0 0 9px #3879ff38}
+    @media(max-width:810px){
+      .sidebar-inner .panel-top:not(.is-collapsed){padding:0 16px max(12px,env(safe-area-inset-bottom));border-radius:22px 22px 0 0}
+      .panel-top .brand-row{margin:0 0 12px}
+      #topPanelToggle[aria-expanded="true"]{top:0}
+    }
+    #preferences .theme-switch{display:inline-flex;width:fit-content;max-width:100%;align-items:center}
+    #preferences .theme-switch button{margin:0;min-height:44px;padding:6px 12px;border:0;background:transparent}
+    #preferences .theme-switch button[aria-pressed="true"]{background:var(--white);color:var(--ink);font-weight:700}
+    #mapCredits{flex:none;text-align:center;background:var(--white);color:var(--muted);font-size:12px;line-height:1.4;pointer-events:auto}
+    #mapCredits:not(:empty){padding:3px 8px}
+    #mapCredits a{color:inherit;text-decoration:underline}
+    #adPreview>div{flex-wrap:wrap}
+    #adCarousel{width:100%}
+    #adImage{height:auto;max-height:clamp(96px,18dvh,156px);border-radius:12px}
+    @media(max-width:810px){
+      body:not(.show-lower-panel) .sidebar-inner .panel-top.is-collapsed{
+        align-self:stretch;margin:0 12px;padding:0;background:transparent!important;border:0;border-radius:24px;
+      }
+      body:not(.show-lower-panel) .panel-top.is-collapsed #topPanelToggle{
+        display:flex;align-items:center;gap:12px;width:100%;min-height:48px;margin:0;padding:0 16px;
+        background:#fff;color:#19231e;border:1px solid #dde4de;border-radius:24px;font-size:16px;text-align:left;
+      }
+      body:not(.show-lower-panel) .panel-top.is-collapsed #topPanelToggle::before{
+        content:"";width:22px;height:22px;flex:none;
+        background:center/contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23028848' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='10' cy='10' r='6.5'/%3E%3Cpath d='m15 15 6 6'/%3E%3C/svg%3E");
+      }
+    }
+    html,body{touch-action:pan-y;overscroll-behavior-x:none}
+    #loginScreen,.sidebar,.panel-top,.panel-body,#preferences{touch-action:pan-y}
+    #preferences{overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;overflow-wrap:anywhere}
+    #preferences button{max-width:100%;white-space:normal}
+    #map{touch-action:none}
+    @media(pointer:coarse){input:not([type="checkbox"]),select,textarea{font-size:max(16px,1rem)!important}}
   </style>
 </head>
 <body>
+  <main id="loginScreen"><form id="loginForm"><img src="/assets/zeca-icon.svg?v=2" width="54" height="54" alt="ZECA"><h1 id="authTitle">Entrar no ZECA</h1><label for="loginEmail">Seu e-mail</label><input id="loginEmail" type="email" autocomplete="username" required maxlength="254">
+    <div id="codeRow" hidden><label for="loginCode">Código enviado por e-mail</label><input id="loginCode" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6"></div>
+    <div id="passwordRow"><label id="passwordLabel" for="loginPassword">Senha</label><input id="loginPassword" type="password" autocomplete="current-password" required maxlength="128"></div>
+    <button id="loginSubmit" class="btn-primary">Entrar</button><div id="authActions">
+    <button type="button" data-auth="create">Criar minha senha</button><button type="button" data-auth="reset">Esqueci minha senha</button><button type="button" data-auth="code">Entrar com código</button></div>
+    <button type="button" id="changeEmail" hidden>Voltar ao login</button><p id="loginMsg" role="status"></p></form></main>
   <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
     <symbol id="ico-locate" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></symbol>
     <symbol id="ico-pin" viewBox="0 0 24 24"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></symbol>
@@ -173,49 +369,46 @@
     <symbol id="ico-refresh" viewBox="0 0 24 24"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M5.5 9A7.5 7.5 0 0 1 19 7l1 5M4 12l1 5a7.5 7.5 0 0 0 13.5-2"/></symbol>
     <symbol id="ico-people" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2"/><path d="M17 5a3 3 0 0 1 0 6m1 3a5 5 0 0 1 3 5v1"/></symbol>
   </svg>
-  <div class="app">
+  <div class="app" hidden>
     <aside class="sidebar" aria-label="Planejamento da corrida">
       <div class="sidebar-inner">
-        <div class="panel-top">
-          <div class="brand-row"><div class="brand" aria-label="VaiGo">vaiGo<span class="brand-point"></span></div><div style="display:flex;align-items:center;gap:9px"><span class="demo-chip">SIMULAÇÃO V9</span><button type="button" class="profile-dot" id="settingsShortcut" aria-label="Abrir administração de teste"><svg class="ui-icon"><use href="#ico-settings"/></svg></button></div></div>
-          <h1>Para onde vamos?</h1>
-          <p class="description">Sua próxima viagem começa aqui. Calcule o preço antes de sair.</p>
+        <div class="panel-top"><button type="button" id="topPanelToggle" class="mobile-collapse-btn" aria-expanded="true" aria-label="Recolher busca"></button>
+          <div class="brand-row"><div class="passenger-heading"><img src="/assets/zeca-icon.svg?v=2" alt="ZECA" width="35" height="35"><strong id="tripGreeting"></strong></div><button class="profile-dot" id="openPreferences" aria-label="Configurações" aria-haspopup="dialog" aria-controls="preferences"><svg class="ui-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="m9 3 1-2h4l1 2 2 1 2-.2 2 3-1.3 2 .3 2 1.5 1.8-1 3.6-2.4.4-1.5 1.4-.4 2.4-3.8.9-1.6-1.6-2-.3-2 1.2-3-2 .3-2.3-1-1.8L1 13v-3l2.2-1.3 1-1.9L4 4.5l3-1.7z"/><circle cx="11.8" cy="11.6" r="3.6"/></svg></button></div>
+
+          
           <div class="inputs">
-            <span class="route-rail"></span>
+            
             <div class="address-row">
-              <div class="address-search"><input id="originInput" autocomplete="off" type="text" aria-label="Origem" value="Ative o GPS para localizar" placeholder="De onde você sai?" /></div>
-              <button class="mini-button" id="gpsButton" title="Ativar ou pausar GPS em tempo real" aria-label="Ativar ou pausar GPS em tempo real" aria-pressed="false"><svg class="ui-icon"><use href="#ico-locate"/></svg></button>
+              <div class="address-search"><input id="originInput" autocomplete="off" type="text" aria-label="Origem" value="" placeholder="De onde você sai?" /><button type="button" class="address-clear" data-clear="origin" aria-label="Limpar origem">×</button><button class="mini-button" id="gpsButton" title="Ativar ou pausar GPS em tempo real" aria-label="Ativar ou pausar GPS em tempo real" aria-pressed="false"><svg class="ui-icon"><use href="#ico-locate"/></svg></button></div>
+
             </div>
-            <div class="address-row"><div class="address-search"><input id="destinationInput" autocomplete="off" aria-label="Destino" type="text" placeholder="Para onde?" /></div><button class="mini-button" id="mapPickButton" title="Selecionar destino no mapa" aria-label="Selecionar destino no mapa"><svg class="ui-icon"><use href="#ico-pin"/></svg></button></div>
+            <div class="address-row"><div class="address-search"><input id="destinationInput" autocomplete="off" aria-label="Destino" type="text" placeholder="Para onde vamos?" /><button type="button" class="address-clear" data-clear="destination" aria-label="Limpar destino">×</button><button id="findAddressButton" aria-label="Pesquisar destino" title="Pesquisar destino"><svg class="ui-icon" aria-hidden="true" viewBox="0 0 24 24"><circle cx="10" cy="10" r="7"/><path d="m15 15 6 6"/></svg></button></div></div>
           </div>
-          <div class="suggestions" id="suggestions" hidden role="listbox" aria-label="Sugestões de endereços"></div><button type="button" id="findAddressButton" style="margin:8px 0 0 19px;border:0;border-radius:8px;background:#171717;color:#fff;font-weight:700;font-size:12px;padding:11px 13px;cursor:pointer">Pesquisar destino</button>
-          <div class="live-row"><span class="status" id="gpsStatus"><span class="status-dot"></span><span id="gpsLabel">GPS não ativado</span></span><button class="linkish" id="resetRouteButton">Limpar rota</button></div>
+          <div id="estimateStatus" role="status"></div><div class="suggestions" id="suggestions" hidden role="listbox" aria-label="Sugestões de endereços"></div><button class="mini-button" id="mapPickButton" title="Selecionar destino no mapa" aria-label="Escolher destino no mapa" aria-pressed="false"><svg class="ui-icon" aria-hidden="true"><use href="#ico-pin"/></svg>Escolher no mapa</button>
+          
+          <section id="recentRides" aria-label="Corridas anteriores" hidden></section>
+          <section id="adCarousel" aria-label="Publicidade" hidden><img id="adImage" alt="Anúncio"><div id="adDots"></div></section>
           <div class="quick-dest" aria-label="Destinos sugeridos" style="display:none">
             <button data-quick="ibirapuera">Parque Ibirapuera</button>
             <button data-quick="congonhas">Congonhas</button>
             <button data-quick="eldorado">Shopping Eldorado</button>
           </div>
         </div>
-        <div id="vaigoTools" style="padding:9px 17px;background:#fff;border-bottom:1px solid #eee;display:flex;gap:6px;flex-wrap:wrap;position:relative;z-index:6">
-<button type="button" id="vaigoFavSave" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">☆ Salvar destino</button>
-<button type="button" id="vaigoFavShow" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">★ Favoritos</button>
-<button type="button" id="vaigoPinToggle" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">📍 Ajustar embarque</button>
-<button type="button" id="vaigoUseGPS" style="padding:9px;border-radius:8px;border:1px solid #b5d6bb;background:#ecf7ee">◎ Usar GPS no embarque</button>
-<button type="button" id="vaigoConfirmHouse" style="padding:9px;border-radius:8px;border:1px solid #b5d6bb;background:#ecf7ee">✓ Confirmar entrada da residência</button>
-<button type="button" id="vaigoDrivers" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">🚘 Motoristas de teste</button>
-<div id="vaigoToolsMsg" aria-live="polite" style="flex-basis:100%;font-size:11px;color:#666">Números não confirmados devem ser conferidos no mapa. Motoristas são simulados.</div></div>
-<div class="panel-body">
-          <div class="tab-bar" role="tablist" aria-label="Painéis"><button id="passengerTab" role="tab" aria-selected="true" class="active">Passageiro</button><button id="financeTab" role="tab" aria-selected="false">Motorista</button><button id="adminTab" role="tab" aria-selected="false">ADM</button></div>
-          <section id="passengerPanel" role="tabpanel" aria-labelledby="passengerTab">
+        
+<div class="panel-body is-collapsed"><button type="button" id="bottomPanelToggle" class="mobile-collapse-btn" aria-expanded="false">Opções de carro</button>
+          <div class="tab-bar" role="tablist" aria-label="Painéis"><button id="passengerTab" role="tab" aria-selected="true" class="active">Passageiro</button><button id="financeTab" role="tab" aria-selected="false">Motorista</button><button hidden id="adminTab" role="tab" aria-selected="false">ADM</button></div>
+          <section id="passengerPanel" class="hidden" role="tabpanel" aria-labelledby="passengerTab">
             <div class="section-title"><h2>Escolha uma viagem</h2><small>Valores estimados</small></div>
             <div class="vehicle-list" id="vehicleList"></div>
             <div class="route-stats"><svg class="ui-icon"><use href="#ico-route"/></svg><span id="tripDistance">7,2 km</span><span class="sep"></span><span id="tripDuration">18 min</span><span class="route-label" id="routeMode">Exemplo</span></div>
-            <div id="rideBanner" class="trip-banner hidden"><strong id="rideHeadline">Solicitação em andamento</strong><p id="rideProgressLabel">Motorista virtual a caminho.</p><div class="progress"><span id="rideProgress"></span></div></div>
+            <div class="field" id="phoneField"><label for="passengerPhone">Telefone para o motorista ligar (opcional)</label><input type="tel" inputmode="tel" id="passengerPhone" placeholder="DDD e número" maxlength="24"></div>
+            <div aria-live="polite" id="rideBanner" class="trip-banner hidden"><strong id="rideHeadline">Solicitação em andamento</strong><p id="rideProgressLabel">Motorista virtual a caminho.</p><div class="progress"><span id="rideProgress"></span></div></div>
             <button class="btn-primary" id="requestButton"><span id="requestButtonLabel">Simular corrida · R$ 28,04</span><svg class="ui-icon"><use href="#ico-arrow"/></svg></button>
-            <p class="note">Demonstração independente. Não solicita motoristas nem processa pagamentos reais. Com destino selecionado, a distância é calculada por rota quando o serviço de mapas está disponível.</p>
+            <p class="note">Corrida simulada, sem chamada real ou cobrança.</p>
           </section>
           <section id="financePanel" class="hidden" role="tabpanel" aria-labelledby="financeTab">
-            <div id="driverRequest" class="fare-card" style="border:1px solid #dedede"><strong id="driverStatus">Painel do motorista · disponível</strong><p id="driverRequestInfo" class="small-info">Aguardando solicitação simulada do passageiro.</p><button id="driverAction" class="btn-primary" style="margin-top:9px;display:none">Aceitar corrida</button></div><div class="fare-card" style="margin-top:12px">
+            <div class="fare-card"><strong>Disponibilidade no mapa</strong><p class="small-info">Ao ficar disponível, você compartilha sua posição aproximada com passageiros próximos enquanto esta página estiver aberta e visível.</p><button type="button" class="btn-primary" id="liveGps">Ficar disponível</button><p id="liveGpsStatus" class="small-info" aria-live="polite">Você está offline.</p></div>
+            <div id="driverRequest" class="fare-card" style="border:1px solid #dedede"><strong id="driverStatus">Painel do motorista · disponível</strong><p id="driverRequestInfo" class="small-info">Aguardando solicitação simulada do passageiro.</p><a hidden id="callPassenger">Ligar ao passageiro</a><button id="driverAction" class="btn-primary" style="margin-top:9px;display:none">Aceitar corrida</button></div><div class="fare-card" style="margin-top:12px">
   <div class="stat-small">Valor a receber pela viagem (simulação)</div>
   <div class="money-big green" id="driverOfferAmount">R$ 21,03</div>
   <div id="driverOfferRoute" class="small-info">Aguardando rota · Distância e tempo estimados</div>
@@ -224,7 +417,8 @@
 </section>
 <section id="adminPanel" class="hidden" role="tabpanel" aria-labelledby="adminTab">
   <div class="section-title"><h2>Administração da plataforma</h2><small>Ferramentas locais de teste</small></div>
-  <p class="note">Painel administrativo demonstrativo, ainda sem autenticação. Antes de operar com usuários reais, será necessário restringir o acesso no servidor.</p>
+  <details id="adsEditor"><summary>Publicidade no painel do passageiro</summary><fieldset id="adFields" disabled><label><input type="checkbox" id="adVisible"> Mostrar anúncios aos passageiros</label><div id="adPreview"></div><label for="adFile">Adicionar imagem</label><input id="adFile" type="file" accept="image/png,image/jpeg,image/webp"><button class="btn-primary" id="adSave" type="button">Salvar publicidade</button></fieldset><p id="adStatus" role="status"></p></details>
+  <section id="ownerGrants" hidden><h2>Acessos ao ADM</h2><form id="grantForm"><label for="grantEmail">E-mail do administrador</label><input id="grantEmail" type="email" required maxlength="254"><button class="btn-primary">Adicionar administrador</button></form><ul id="grantList"></ul><p id="grantStatus" role="status"></p></section>
   <div class="section-title"><h2>Divisão da corrida</h2><small>Transparência por viagem</small></div>
             <div class="fare-card"><div class="split-big"><div><div class="stat-small">Passageiro paga</div><div class="money-big" id="financeTotal">R$ 28,04</div></div><div style="text-align:right"><div class="stat-small">Motorista após gasolina</div><div id="financeDriverNet" class="green" style="font-size:20px;font-weight:820;white-space:nowrap">R$ 17,13</div></div></div><div class="divider"></div><div class="summary-line"><span>Receita do aplicativo (<span id="displayCommission">25%</span>)</span><strong id="appShare">R$ 7,01</strong></div><div class="summary-line"><span>Motorista antes da gasolina</span><strong id="driverGross">R$ 21,03</strong></div><div class="summary-line"><span>Custo estimado da gasolina</span><strong id="fuelCost">− R$ 3,90</strong></div><div class="divider"></div><div class="summary-line"><span><strong>Motorista após gasolina</strong></span><strong class="green" id="driverNet">R$ 17,13</strong></div></div>
             <div class="section-title"><h2>Ajustar valores</h2><small>Recalcula na hora</small></div>
@@ -233,32 +427,65 @@
             <div class="field-row"><div class="field"><label for="priceKm">Tarifa por km (R$)</label><input id="priceKm" type="number" min="0" max="50" step="0.10" value="2.20" inputmode="decimal" /></div><div class="field"><label for="priceMinute">Tarifa por min (R$)</label><input id="priceMinute" type="number" min="0" max="10" step="0.05" value="0.40" inputmode="decimal" /></div></div>
             <div class="field-row"><div class="field"><label for="manualKm">Distância (km)</label><input id="manualKm" type="number" min="0.5" max="2000" step="0.1" value="7.2" inputmode="decimal" /></div><div class="field"><label for="manualMin">Duração (min)</label><input id="manualMin" type="number" min="1" max="3000" step="1" value="18" inputmode="decimal" /></div></div>
             <div class="input-info"><strong>Fórmula:</strong> máximo entre R$ 9,90 e (bandeirada + km × tarifa/km + min × tarifa/min), multiplicado pela categoria. Comissão incide no total. Gasolina = distância ÷ consumo × R$ por litro. Não inclui manutenção, impostos, pedágios, deslocamento até o passageiro ou taxas de pagamento.</div>
-            <button id="resetSettings" class="btn-primary" style="background:#333;min-height:40px;margin-top:12px"><svg class="ui-icon"><use href="#ico-refresh"/></svg> Restaurar valores padrão</button>
+            <button class="btn-primary" id="saveSettings">Salvar tarifas</button><p id="settingsStatus" role="status"></p><button id="resetSettings" class="btn-primary" style="background:#333;min-height:40px;margin-top:12px"><svg class="ui-icon"><use href="#ico-refresh"/></svg> Restaurar valores padrão</button>
             <div class="history"><div class="section-title"><h2>Corridas simuladas</h2><small id="historyCount">0 registros</small></div><div id="tripHistory" class="small-info">Nenhuma corrida concluída ainda.</div></div>
           </section>
         </div>
+        <footer id="mapCredits" aria-label="Créditos do mapa"></footer>
       </div>
     </aside>
     <main class="map-pane" aria-label="Mapa e rota">
       <div id="map"></div>
       <div class="map-fallback" id="mapFallback"><div><strong>Mapa não carregado</strong><p>Verifique a conexão com a internet. A calculadora de tarifas continua disponível.</p></div></div>
       <div class="map-badge"><div class="badge-icon"><svg class="ui-icon"><use href="#ico-locate"/></svg></div><div><strong id="mapBadgeTitle">Sua cidade, sua corrida</strong><small id="mapBadgeSubtitle">Ative o GPS ou pesquise um destino</small></div></div>
-      <div class="floating-map-ctrls"><button class="map-control" id="recenterButton" aria-label="Centralizar mapa na minha posição" title="Centralizar mapa"><svg class="ui-icon"><use href="#ico-locate"/></svg></button><button class="map-control" id="zoomInButton" aria-label="Aproximar mapa" title="Aproximar" style="font-size:25px;font-weight:400">+</button><button class="map-control" id="zoomOutButton" aria-label="Afastar mapa" title="Afastar" style="font-size:27px;font-weight:400">−</button></div>
-      <div class="map-tip" id="mapTip">Toque no mapa para marcar o destino <span aria-hidden="true">↗</span></div>
+      <div class="floating-map-ctrls"><button type="button" id="cancelMapChoice" hidden>Cancelar seleção</button><button class="map-control" id="recenterButton" aria-label="Centralizar mapa na minha posição" title="Centralizar mapa"><svg class="ui-icon"><use href="#ico-locate"/></svg></button><button class="map-control" id="zoomInButton" aria-label="Aproximar mapa" title="Aproximar" style="font-size:25px;font-weight:400">+</button><button class="map-control" id="zoomOutButton" aria-label="Afastar mapa" title="Afastar" style="font-size:27px;font-weight:400">−</button></div>
+      <span id="fleetStatus" hidden></span><div class="map-tip" id="mapTip">Explore o mapa</div>
     </main>
   </div>
+<dialog id="preferences" aria-labelledby="prefsTitle"><header><h2 id="prefsTitle">Configurações</h2><button type="button" id="closePrefs" aria-label="Fechar configurações">×</button></header>
+<section><h3>Conta</h3><button type="button" id="editGreeting" class="linkish" aria-label="Editar nome da saudação">Editar nome</button><form id="greetingForm" hidden><label for="firstName">Como quer ser chamado?</label><input id="firstName" autocomplete="given-name" maxlength="40" required><button type="submit">Salvar</button><small role="status" id="nameStatus"></small></form><button class="linkish" id="managePassword" type="button">Configurar senha</button><button class="linkish" id="logoutButton">Sair</button></section>
+<section><h3>Aparência</h3><div class="theme-switch" role="group" aria-label="Tema"><button type="button" id="lightTheme" aria-pressed="true">☀ Claro</button><button type="button" id="darkTheme" aria-pressed="false">☾ Escuro</button></div></section>
+<section><h3>Modo de uso</h3><button class="linkish" id="driverShortcut" type="button">Motorista</button><button type="button" id="settingsShortcut" hidden>Administração</button></section>
+<section><h3>Trajeto e GPS</h3><span class="status" id="gpsStatus"><span class="status-dot"></span><span id="gpsLabel">GPS não ativado</span></span><div id="vaigoTools" style="padding:9px 17px;background:#fff;border-bottom:1px solid #eee;display:flex;gap:6px;flex-wrap:wrap;position:relative;z-index:6">
+<button type="button" id="vaigoFavSave" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">☆ Salvar destino</button>
+<button type="button" id="vaigoFavShow" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">★ Favoritos</button>
+<button type="button" id="vaigoPinToggle" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">Escolher embarque no mapa</button>
+<button type="button" id="vaigoUseGPS" style="padding:9px;border-radius:8px;border:1px solid #b5d6bb;background:#ecf7ee">◎ Usar GPS no embarque</button>
+<button type="button" id="zoomHouse" style="padding:9px;border:1px solid #bbb;border-radius:8px">Ver entrada no mapa</button>
+<button type="button" id="vaigoConfirmHouse" style="padding:9px;border-radius:8px;border:1px solid #b5d6bb;background:#ecf7ee">✓ Confirmar entrada da residência</button>
+<button type="button" id="vaigoDrivers" style="padding:9px;border-radius:8px;border:1px solid #ddd;background:#fafafa">🚘 Carros disponíveis</button>
+<div id="vaigoToolsMsg" aria-live="polite" style="flex-basis:100%;font-size:11px;color:#666"></div></div><button class="linkish" id="resetRouteButton">Limpar rota</button></section></dialog>
   <div id="toast" role="status" aria-live="polite" class="toast"></div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/leaflet-rotate@0.6.2/dist/leaflet-rotate.js" crossorigin="anonymous"></script>
   <script>
-  (() => {
+  // Leaflet handles its own touch zoom. Suppress native page magnification
+  // without interrupting single-finger scrolling or map touch listeners.
+  for(const type of ['gesturestart','gesturechange']){
+    document.addEventListener(type,event=>event.preventDefault(),{passive:false});
+  }
+  function guardPagePinch(event){
+    if(event.touches.length<2)return;
+    const map=document.getElementById('map');
+    if(!Array.from(event.touches).every(touch=>map.contains(touch.target))){
+      event.preventDefault();
+    }
+  }
+  for(const type of ['touchstart','touchmove']){
+    document.addEventListener(type,guardPagePinch,{capture:true,passive:false});
+  }
+
+  function startZeca(account,settings) {
     'use strict';
     const $ = id => document.getElementById(id);
+    $('adminTab').hidden=$('settingsShortcut').hidden=!account.admin;
+    $('ownerGrants').hidden=!account.owner;
     const money = n => (Number.isFinite(n) ? n : 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
     const num = (id, fallback, min, max) => { const n = Number($(id).value.replace?.(',','.') ?? $(id).value); return Number.isFinite(n) && n >= min && n <= max ? n : fallback; };
     const defs = {
-      eco: {name:'VaiGo X', sub:'Econômico · até 4 pessoas', multiplier:1, liters:12, silhouette:'#2b2e32'},
-      comfort: {name:'Comfort', sub:'Mais conforto · até 4 pessoas', multiplier:1.35, liters:10, silhouette:'#56575c'},
-      xl: {name:'XL', sub:'Espaço extra · até 6 pessoas', multiplier:1.85, liters:8, silhouette:'#454951'}
+      eco: {name:'ZECA X', sub:'Econômico · até 4 pessoas', multiplier:1, liters:12, silhouette:'#2b2e32'},
+      comfort: {name:'Comfort', sub:'Executivo · até 4 pessoas', multiplier:1.35, liters:10, silhouette:'#56575c'},
+      xl: {name:'XL', sub:'Espaçoso · até 6 pessoas', multiplier:1.85, liters:8, silhouette:'#454951'}
     };
     const sampleDest = {
       ibirapuera:{name:'Parque Ibirapuera', lat:-23.5874, lon:-46.6576},
@@ -266,12 +493,21 @@
       eldorado:{name:'Shopping Eldorado', lat:-23.5729, lon:-46.6961}
     };
     const DEFAULT = {fuelPrice:6.5, kmPerLiter:12, commission:25, baseFare:5, priceKm:2.2, priceMinute:.4};
-    const state = { origin:{name:'São Paulo · ponto de exemplo',lat:-23.5617,lon:-46.6559}, dest:null, gps:false, userLocation:null, gpsWatch:null, pickupMode:'default', selected:'eco', tab:'passenger', route:null, routeQuality:'Exemplo', distance:7.2, duration:18, pickOnMap:false, searchField:'destination', debounce:null, abort:null, searchSeq:0, map:null, startMarker:null, destMarker:null, accuracyCircle:null, routeLine:null, driverMarker:null, running:false, rideStage:'idle', lockedFare:null, rideTimer:null, rideProgress:0, latestPositionAt:null, lastReverseAt:0, gpsAccuracy:null, history:[] };
-    try { const s=JSON.parse(localStorage.getItem('vaigo_config')||'null'); if(s) for(const id of Object.keys(DEFAULT)) if(typeof s[id]==='number') $(id).value=s[id]; } catch(e){}
-    try { const h=JSON.parse(localStorage.getItem('vaigo_history')||'[]'); if(Array.isArray(h)) state.history=h.slice(0,20); } catch(e){}
+    const state = { origin:{name:'Francisco Beltrão · referência',lat:-26.079,lon:-53.053}, dest:null, gps:false, userLocation:null, gpsWatch:null, originReady:false, pickupMode:'default', selected:'eco', tab:'passenger', route:null, routeQuality:'Exemplo', distance:7.2, duration:18, pickOnMap:false, searchField:'destination', debounce:null, abort:null, searchSeq:0, map:null, startMarker:null, destMarker:null, accuracyCircle:null, routeLine:null, driverMarker:null, running:false, rideStage:'idle', lockedFare:null, rideTimer:null, rideProgress:0, latestPositionAt:null, lastReverseAt:0, gpsAccuracy:null, history:[] };
+    try { const s=settings; if(s) for(const id of Object.keys(DEFAULT)) if(typeof s[id]==='number') $(id).value=s[id]; } catch(e){}
+    try { const h=JSON.parse(localStorage.getItem('vaigo_history:'+account.email)||'[]'); if(Array.isArray(h)) state.history=h.filter(t=>t && Number.isFinite(t.km) && Number.isFinite(t.fare) && Number.isFinite(t.driverNet)).slice(0,20); } catch(e){}
     let toastTimer;
     function toast(message) { $('toast').textContent=message; $('toast').classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>$('toast').classList.remove('show'),3900); }
-    function svgCar(color,large=false) { return `<svg viewBox="0 0 115 75" role="img" aria-label="Carro"><ellipse cx="57" cy="61" rx="50" ry="8" fill="#000" opacity=".13"/><path d="M16 43 23 25q3-6 12-8l42-1q10 1 15 10l8 17 3 5v11l-8 3H18l-7-4V49z" fill="${color}"/><path d="M34 22 76 21q7 0 11 8l5 13H22l8-14q2-5 4-6z" fill="#929ca5"/><path d="M37 24 56 24v16H27l7-13q1-3 3-3z" fill="#d0d7df"/><path d="M61 24h14q7 0 9 6l4 10H61z" fill="#ccd5de"/><path d="M20 45h76l5 5v7H15v-6z" fill="${color}"/><rect x="17" y="47" width="13" height="5" rx="2" fill="#f5efcd"/><rect x="86" y="47" width="12" height="5" rx="2" fill="#e5bfc1"/><circle cx="31" cy="60" r="10" fill="#1b1c1e"/><circle cx="31" cy="60" r="5" fill="#aeb3bc"/><circle cx="86" cy="60" r="10" fill="#1b1c1e"/><circle cx="86" cy="60" r="5" fill="#aeb3bc"/><path d="M58 23v18" stroke="#72777d" stroke-width="2"/></svg>`; }
+    function svgCar(id) {
+      const shapes={
+        eco:['Compacto','#42bd9e','M14 42l8-19q2-5 9-5h27l15 15 17 5 3 12H12z','M28 23h12v12H24z M44 23h12l12 12H44z',28,75],
+        comfort:['Executivo','#d0a85f','M5 40l15-6 22-15h24l18 14 19 4 5 13H5z','M30 33l15-10h9v10z M58 23h7l15 10H58z',24,88],
+        xl:['Seis lugares','#71a7e1','M5 43l3-24 6-5h55l17 16 17 5 4 15H5z','M15 20h16v12H14z M35 20h16v12H35z M55 20h12l13 12H55z',23,88]
+      };
+      const [label,paint,body,windows,front,rear]=shapes[id];
+      const wheels=[front,rear].map(x=>`<circle cx="${x}" cy="49" r="9" fill="#232832"/><circle cx="${x}" cy="49" r="4" fill="#c8d4d9"/>`).join('');
+      return `<svg viewBox="0 0 115 70" role="img" aria-label="${label}"><path d="${body}" fill="${paint}" stroke="#303b42" stroke-width="1.5"/><path d="${windows}" fill="#213848"/>${wheels}</svg>`;
+    }
     function calc(type=state.selected) {
       const v=defs[type];
       const base=num('baseFare',DEFAULT.baseFare,0,100);
@@ -289,18 +525,31 @@
     function renderVehicles() {
       const html=Object.entries(defs).map(([id,v])=>{
         const c=calc(id);
-        return `<button class="vehicle ${state.selected===id?'selected':''}" type="button" data-vehicle="${id}" aria-pressed="${state.selected===id}"><span class="car-picture">${svgCar(v.silhouette)}</span><span><span class="v-name">${v.name}</span><span class="v-sub">${v.sub}</span></span><span class="v-price">${money(c.fare)}<small>estimativa</small></span></button>`;
+        return `<button class="vehicle ${state.selected===id?'selected':''}" type="button" data-vehicle="${id}" aria-pressed="${state.selected===id}"><span class="car-picture">${svgCar(id)}</span><span><span class="v-name">${v.name}</span><span class="v-sub">${v.sub}</span></span><span class="v-price">${state.originReady&&state.dest?money(c.fare):'—'}<small>${state.originReady&&state.dest?'estimativa':'aguarda trajeto'}</small></span></button>`;
       }).join('');
       $('vehicleList').innerHTML=html;
       document.querySelectorAll('[data-vehicle]').forEach(b=>b.addEventListener('click',()=>{if(state.running)return;state.selected=b.dataset.vehicle;render();}));
     }
+    let lastHistory;
     function renderHistory() {
+      if(lastHistory===state.history)return;
+      lastHistory=state.history;
+      const recent=$('recentRides');
+      recent.replaceChildren();recent.hidden=!state.history.length;
+      $('tripHistory').closest('.history').hidden=recent.hidden;
+      for(const trip of state.history.slice(0,2)){
+        const row=document.createElement('div');
+        const label=document.createElement('strong'),detail=document.createElement('small');
+        label.textContent=trip.destination||trip.type;
+        detail.textContent=trip.date+' · '+trip.km.toLocaleString('pt-BR')+' km';
+        row.append(label,detail);recent.append(row);
+      }
       $('historyCount').textContent=`${state.history.length} ${state.history.length===1?'registro':'registros'}`;
       $('tripHistory').innerHTML=state.history.length ? state.history.slice(0,6).map(t=>`<div class="history-entry"><span>${escapeHtml(t.date)} · ${escapeHtml(t.type)}<br><span style="color:#999">${t.km.toFixed(1).replace('.',',')} km · simulação</span></span><span style="text-align:right"><strong>${money(t.fare)}</strong><br><span class="green">motorista: ${money(t.driverNet)}</span></span></div>`).join('') : 'Nenhuma corrida concluída ainda.';
     }
     function render() {
       renderVehicles();
-      const c=calc();
+      const c=state.lockedFare || calc();
       $('tripDistance').textContent=state.distance.toLocaleString('pt-BR',{maximumFractionDigits:1})+' km';
       $('tripDuration').textContent=Math.round(state.duration)+' min';
       $('routeMode').textContent=state.routeQuality;
@@ -314,20 +563,25 @@
       $('fuelCost').textContent='− '+money(c.fuel);
       $('driverNet').textContent=money(c.driverNet);
       const stage=state.rideStage;
-      $('requestButtonLabel').textContent=stage==='idle'?`Solicitar corrida · ${money(c.fare)}`:stage==='searching'?'Cancelar solicitação':stage==='accepted'?'Cancelar (simulação)':stage==='driving'?'Viagem em andamento':'Concluída';
+      $('phoneField').hidden=state.running;
+      const call=$('callPassenger');
+      call.hidden=!state.phone || !['accepted','arrived','driving'].includes(stage);
+      if(call.hidden)call.removeAttribute('href');else call.href='tel:'+state.phone;
+      $('requestButtonLabel').textContent=stage==='idle'?(state.originReady&&state.dest?`Solicitar corrida · ${money(c.fare)}`:'Informe embarque e destino'):stage==='searching'?'Cancelar solicitação':['accepted','arrived'].includes(stage)?'Cancelar (simulação)':stage==='driving'?'Viagem em andamento':'Concluída';
       $('requestButton').disabled=stage==='driving';
-      $('rideHeadline').textContent=stage==='searching'?'Buscando motorista virtual':stage==='accepted'?'Motorista virtual aceitou':stage==='driving'?'Corrida simulada em andamento':'Corrida de demonstração';
-      $('rideProgressLabel').textContent=stage==='searching'?'Abra “Motorista e app” para aceitar a chamada.':stage==='accepted'?'No painel do motorista, clique em “Iniciar corrida”.':stage==='driving'?`Motorista virtual percorreu ${Math.round(state.rideProgress*100)}% da rota.`:'';
-      $('driverStatus').textContent=stage==='idle'?'Painel do motorista · disponível':stage==='searching'?'Nova solicitação de corrida':stage==='accepted'?'Corrida aceita':stage==='driving'?'Passageiro em viagem':'Disponível';
+      $('rideHeadline').textContent=stage==='searching'?'Buscando motorista virtual':stage==='accepted'?'Motorista a caminho':stage==='arrived'?'Seu motorista chegou ao embarque':stage==='driving'?'Corrida simulada em andamento':'Corrida de demonstração';
+      $('rideProgressLabel').textContent=stage==='searching'?'Abra “Motorista e app” para aceitar a chamada.':stage==='accepted'?'Acompanhe a aproximação simulada no mapa.':stage==='arrived'?'Encontre o motorista no ponto de embarque.':stage==='driving'?`Motorista virtual percorreu ${Math.round(state.rideProgress*100)}% da rota.`:'';
+      $('driverStatus').textContent=stage==='idle'?'Painel do motorista · disponível':stage==='searching'?'Nova solicitação de corrida':stage==='accepted'?'A caminho do embarque':stage==='arrived'?'Aguardando passageiro':stage==='driving'?'Passageiro em viagem':'Disponível';
       $('driverRequestInfo').textContent=stage==='idle'?'Aguardando solicitação simulada do passageiro.':`${defs[state.selected].name} · ${state.distance.toFixed(1).replace('.',',')} km · ${Math.round(state.duration)} min · Receber: ${money(state.lockedFare?.driverGross??c.driverGross)}`;
-      $('driverAction').style.display=stage==='searching'||stage==='accepted'||stage==='driving'?'flex':'none';
-      $('driverAction').textContent=stage==='searching'?'Aceitar corrida':stage==='accepted'?'Iniciar corrida':stage==='driving'?'Concluir corrida':'';
+      $('driverAction').style.display=stage!=='idle'?'flex':'none';
+      $('driverAction').textContent=stage==='searching'?'Aceitar corrida':stage==='accepted'?'Cheguei':stage==='arrived'?'Iniciar corrida':stage==='driving'?'Concluir corrida':'';
       $('rideProgress').style.width=(state.rideProgress*100).toFixed(1)+'%';
-      $('requestButton').disabled=false;
+      $('originInput').readOnly=state.running;
+      $('destinationInput').readOnly=state.running;
       $('rideBanner').classList.toggle('hidden',!state.running);
-      $('mapBadgeTitle').textContent=state.running?'Viagem simulada em andamento':(state.dest?'Rota preparada':'Sua cidade, sua corrida');
-      $('mapBadgeSubtitle').textContent=state.running?'Motorista virtual · não é uma corrida real':state.dest?`${state.distance.toFixed(1).replace('.',',')} km · ${Math.round(state.duration)} min`:'Ative o GPS ou pesquise um destino';
-      $('passengerPanel').classList.toggle('hidden',state.tab!=='passenger');
+      $('mapBadgeTitle').textContent=state.running?'Viagem simulada em andamento':(state.dest && state.originReady?'Rota preparada':'Sua cidade, sua corrida');
+      $('mapBadgeSubtitle').textContent=state.running?'Motorista virtual · não é uma corrida real':state.dest && state.originReady?`${state.distance.toFixed(1).replace('.',',')} km · ${Math.round(state.duration)} min`:'Ative o GPS ou pesquise um destino';
+      $('passengerPanel').classList.toggle('hidden',state.tab!=='passenger'||!state.estimateReady);
       $('financePanel').classList.toggle('hidden',state.tab!=='finance');
       $('adminPanel').classList.toggle('hidden',state.tab!=='admin');
       $('passengerTab').classList.toggle('active',state.tab==='passenger');
@@ -344,66 +598,91 @@
     function leafIcon(kind) { const html=kind==='you'?'<div class="pin-you"></div>':kind==='dest'?'<div class="pin-dest">▣</div>':'<div class="pin-car">🚙</div>';return L.divIcon({html,iconSize:kind==='you'?[17,17]:kind==='dest'?[30,30]:[37,37],iconAnchor:kind==='you'?[9,9]:kind==='dest'?[15,25]:[18,18],className:''}); }
     function initMap() {
       if(!window.L) { $('mapFallback').style.display='flex'; $('mapBadgeTitle').textContent='Calculadora disponível'; return; }
-      state.map=L.map('map',{zoomControl:false,scrollWheelZoom:true}).setView([state.origin.lat,state.origin.lon],13);
-      // Basemap for prototype testing: Esri street map. No secret is embedded.
-      // If unavailable, try the humanitarian OSM layer as a fallback.
+      state.map=L.map('map',{zoomControl:false,scrollWheelZoom:true,rotate:true,touchRotate:true,touchZoom:true,rotateControl:false,shiftKeyRotate:false,pitchDrag:false,attributionControl:false}).setView([state.origin.lat,state.origin.lon],15);
+      let activeLayer, tileDeadline;
+      const osm='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>';
       const providers=[
-        {url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',options:{maxZoom:19,attribution:'Tiles &copy; Esri, HERE, Garmin, USGS and contributors'}},
-        {url:'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',options:{subdomains:'abc',maxZoom:19,attribution:'&copy; OpenStreetMap contributors, tiles by HOT'}}
+        {url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',attribution:osm},
+        {url:'https://tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',attribution:osm+' · Humanitarian OpenStreetMap Team'}
       ];
-      let providerIndex=0, failedTiles=0, loadedTiles=0, switching=false;
-      function addTiles(){
-        const spec=providers[providerIndex];
-        const layer=L.tileLayer(spec.url,spec.options).addTo(state.map);
-        layer.on('tileload',()=>{loadedTiles++;failedTiles=0;});
-        layer.on('tileerror',()=>{
-          failedTiles++;
-          if(failedTiles>=5 && loadedTiles===0 && !switching){
-            switching=true;
-            if(providerIndex+1<providers.length){
-              state.map.removeLayer(layer);providerIndex++;failedTiles=0;loadedTiles=0;switching=false;
-              toast('Alterando servidor do mapa automaticamente...');addTiles();
-            }else toast('Os servidores de mapas estão indisponíveis. GPS e tarifas continuam funcionando.');
-          }
+      function loadBasemap(index=0){
+        clearTimeout(tileDeadline);
+        if(activeLayer)state.map.removeLayer(activeLayer);
+        const provider=providers[index];
+        $('mapCredits').innerHTML=provider.attribution;
+        const layer=L.tileLayer(provider.url,{maxNativeZoom:19,maxZoom:20,attribution:provider.attribution});
+        activeLayer=layer;
+        let loaded=0,failures=0,switched=false;
+        function failover(){
+          if(activeLayer!==layer||switched)return;
+          switched=true;clearTimeout(tileDeadline);
+          if(index+1<providers.length){loadBasemap(index+1);return;}
+          $('mapFallback').style.display='flex';
+        }
+        layer.on('tileload',()=>{
+          if(activeLayer!==layer)return;
+          loaded++;failures=0;clearTimeout(tileDeadline);
+          $('mapFallback').style.display='none';
         });
+        layer.on('tileerror',()=>{if(++failures>=3)failover();});
+        layer.on('loading',()=>{
+          clearTimeout(tileDeadline);
+          tileDeadline=setTimeout(()=>{if(!loaded)failover();},10000);
+        });
+        layer.addTo(state.map);
       }
-      addTiles();
-      state.startMarker=L.marker([state.origin.lat,state.origin.lon],{icon:leafIcon('you'),zIndexOffset:100,draggable:true}).addTo(state.map);
-      state.startMarker.on('dragend',()=>{if(state.running)return;const p=state.startMarker.getLatLng();chooseOrigin({name:'Embarque ajustado no mapa',lat:p.lat,lon:p.lng},'manual');vaigoMessage('Ponto de embarque corrigido no mapa.');});
+      state.applyBasemap=()=>{};
+      loadBasemap();
+      state.startMarker=L.marker([state.origin.lat,state.origin.lon],{icon:leafIcon('you'),zIndexOffset:100,draggable:false}).addTo(state.map);
       state.map.on('click',evt=>{
-        if(state.running) return;
-        const {lat,lng}=evt.latlng;
-        const p={name:state.pickupAdjust?'Embarque ajustado no mapa':'Destino marcado no mapa',lat,lon:lng};
-        if(state.pickupAdjust){state.pickupAdjust=false;$('vaigoPinToggle').style.background='#fafafa';chooseOrigin(p,'manual');vaigoMessage('Embarque ajustado; confira a rota.');}else chooseDestination(p);
-        if(state.pickOnMap) { state.pickOnMap=false; $('mapPickButton').classList.remove('active'); }
+        if(state.running || (!state.pickOnMap && !state.pickupAdjust))return;
+        const pickup=state.pickupAdjust;
+        clearMapChoice();
+        const place={name:pickup?'Embarque escolhido no mapa':'Destino escolhido no mapa',lat:evt.latlng.lat,lon:evt.latlng.lng};
+        if(pickup)chooseOrigin(place,'manual');else chooseDestination(place);
       });
       const watcher = new ResizeObserver(()=>state.map?.invalidateSize());watcher.observe($('map'));
       setTimeout(()=>state.map?.invalidateSize(),300);
     }
-    function fitMap() { if(!state.map)return;const coords=[[state.origin.lat,state.origin.lon]];if(state.dest) coords.push([state.dest.lat,state.dest.lon]);if(coords.length>1)state.map.fitBounds(coords,{padding:[80,80],maxZoom:15});else state.map.setView(coords[0],14); }
+    function fitMap(){
+      if(!state.map)return;
+      if(!state.dest){state.map.setView([state.origin.lat,state.origin.lon],14);return;}
+      const coords=state.route?.coords||[[state.origin.lat,state.origin.lon],[state.dest.lat,state.dest.lon]];
+      const size=state.map.getSize();
+      const mobile=window.matchMedia('(max-width:810px)').matches;
+      const top=mobile?24:45;
+      const sheet=document.querySelector('.sidebar-inner').getBoundingClientRect();
+      const bottom=mobile?Math.min(size.y*.8,Math.max(24,$('map').getBoundingClientRect().bottom-sheet.top+12)):45;
+      state.map.fitBounds(coords,{paddingTopLeft:[28,top],paddingBottomRight:[28,bottom],maxZoom:16});
+    }
     function updateMarkers() {
       if(!state.map)return;
       state.startMarker.setLatLng([state.origin.lat,state.origin.lon]);
-      if(state.dest) {if(!state.destMarker){state.destMarker=L.marker([state.dest.lat,state.dest.lon],{icon:leafIcon('dest'),draggable:true}).addTo(state.map);state.destMarker.on('dragend',()=>{if(state.running)return;const p=state.destMarker.getLatLng();chooseDestination({name:state.dest?.name||'Destino ajustado no mapa',enteredAddress:state.dest?.enteredAddress||$('destinationInput').value,requestedNumber:state.dest?.requestedNumber,numberRequested:!!state.dest?.numberRequested,lat:p.lat,lon:p.lng,exactNumber:false});vaigoMessage('Marcador posicionado. Clique em Confirmar entrada da residência para usar esse ponto como destino manual.');});}else state.destMarker.setLatLng([state.dest.lat,state.dest.lon]);}
+      if(state.dest) {if(!state.destMarker){state.destMarker=L.marker([state.dest.lat,state.dest.lon],{icon:leafIcon('dest'),draggable:false}).addTo(state.map);}else state.destMarker.setLatLng([state.dest.lat,state.dest.lon]);}
       else if(state.destMarker){state.map.removeLayer(state.destMarker);state.destMarker=null;}
       if(state.routeLine){state.map.removeLayer(state.routeLine);state.routeLine=null;}
-      if(state.dest) {const coords=state.route?.coords || [[state.origin.lat,state.origin.lon],[state.dest.lat,state.dest.lon]];state.routeLine=L.polyline(coords,{color:'#121212',weight:6,opacity:.90,lineCap:'round',lineJoin:'round',dashArray:state.route?'':'6,10'}).addTo(state.map);}
+      if(state.dest && state.originReady) {const coords=state.route?.coords || [[state.origin.lat,state.origin.lon],[state.dest.lat,state.dest.lon]];state.routeLine=L.polyline(coords,{className:'trip-line',color:'#168057',weight:4,opacity:.90,lineCap:'round',lineJoin:'round',dashArray:state.route?'':'6,10'}).addTo(state.map);}
       fitMap();
     }
-    let routingSeq=0, activeRouteController=null;
+    let routingSeq=0, activeRouteController=null, lastRouteOrigin=null;
     async function getRoute(){
       const seq=++routingSeq;
+      lastRouteOrigin=state.originReady&&state.dest?{lat:state.origin.lat,lon:state.origin.lon}:null;
       if(activeRouteController)activeRouteController.abort();
       activeRouteController=null;
       state.route=null;
-      if(!state.dest){state.distance=7.2;state.duration=18;state.routeQuality='Exemplo';$('manualKm').value=7.2;$('manualMin').value=18;updateMarkers();render();return;}
+      state.estimateReady=false;
+      if(!state.dest)state.openAfterEstimate=false;
+      $('estimateStatus').textContent=!state.dest?'':!state.originReady?'Informe o embarque ou use o GPS para calcular o trajeto.':'Calculando distância e tempo…';
+      if(!state.dest || !state.originReady){state.distance=7.2;state.duration=18;state.routeQuality='Exemplo';$('manualKm').value=7.2;$('manualMin').value=18;updateMarkers();render();return;}
       updateEstimatedRoute(state.origin,state.dest);updateMarkers();
       const url=`https://router.project-osrm.org/route/v1/driving/${state.origin.lon},${state.origin.lat};${state.dest.lon},${state.dest.lat}?overview=full&geometries=geojson&steps=false`;
       try {
         const controller=new AbortController();activeRouteController=controller;
         const response=await fetch(url,{signal:AbortSignal.any([controller.signal,AbortSignal.timeout(9000)])});
         if(!response.ok) throw Error('Sem rota');
-        const d=await response.json();if(seq!==routingSeq||!state.dest||!d.routes?.[0])return;
+        const d=await response.json();if(seq!==routingSeq||!state.dest)return;
+        if(!d.routes?.[0])throw Error('Sem rota');
         const route=d.routes[0];const distance=route.distance/1000,duration=route.duration/60;
         if(!Number.isFinite(distance)||!Number.isFinite(duration)||distance<=0||distance>3000)throw Error('Rota inválida');
         state.distance=Math.max(.5,Math.round(distance*10)/10);state.duration=Math.max(1,Math.round(duration));state.routeQuality='Rota viária';
@@ -412,23 +691,52 @@
         state.route={coords:points.map(c=>[c[1],c[0]])};
         $('manualKm').value=state.distance;$('manualMin').value=state.duration;
         updateMarkers();render();
-      }catch(e){ if(seq!==routingSeq)return;state.routeQuality='Aproximada';render(); }
-      finally {if(seq===routingSeq)activeRouteController=null;}
+      }catch(e){ if(seq!==routingSeq)return;updateEstimatedRoute(state.origin,state.dest); }
+      finally {
+        if(seq===routingSeq){
+          activeRouteController=null;
+          state.estimateReady=true;
+          $('estimateStatus').textContent='';
+          render();
+          if(state.openAfterEstimate && state.tab==='passenger')showCarOptions();
+          state.openAfterEstimate=false;
+        }
+      }
     }
-    function chooseDestination(p){
+    function saveConfirmedAddress(p){
+      if(!p||!Number.isFinite(p.lat)||!Number.isFinite(p.lon))return;
+      const label=(p.enteredAddress||p.name||'').trim();if(!label)return;
+      try{const key='zeca_confirmed_addresses_v1:'+account.email;const old=JSON.parse(localStorage.getItem(key)||'[]');const entries=Array.isArray(old)?old:[];const next=[{name:label,hint:p.addressHint||p.hint||'Ponto confirmado manualmente neste dispositivo',addressHint:p.addressHint||p.hint||'',lat:p.lat,lon:p.lon,type:'address',manualVerified:true,exactNumber:false},...entries.filter(x=>x && (x.name!==label || (x.addressHint||'')!==(p.addressHint||p.hint||'')))].slice(0,40);localStorage.setItem(key,JSON.stringify(next));}catch(e){}
+    }
+    function localConfirmedAddresses(query){
+      try {
+        const entries=JSON.parse(localStorage.getItem('zeca_confirmed_addresses_v1:'+account.email)||'[]');
+        const tokens=text=>String(text||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().match(/[a-z0-9]+/g)||[];
+        const words=tokens(query);
+        if(!Array.isArray(entries)||!words.length)return [];
+        return entries.filter(p=>{
+          if(!p||!Number.isFinite(p.lat)||!Number.isFinite(p.lon))return false;
+          const saved=tokens([p.name,p.addressHint].filter(Boolean).join(' '));
+          return words.every(word=>saved.some(token=>/^\d+$/.test(word)?token===word:token.startsWith(word)));
+        }).slice(0,5);
+      }catch(e){return [];}
+    }
+    function chooseDestination(p,openOptions=true){
       if(state.running)return;
-      state.dest=p;
+      clearMapChoice();state.dest={...p};p=state.dest;
       const entered=$('destinationInput').value.trim();
-      const requestedNumber=(entered.match(/(?:^|[\s,])(\d{1,6})(?:[\s,]|$)/)||[])[1];
+      const requestedNumber=p.requestedNumber;
       if(requestedNumber&&!p.exactNumber&&!p.manualVerified){p.numberRequested=true;p.requestedNumber=requestedNumber;p.enteredAddress=entered;}
       $('destinationInput').value=p.enteredAddress||p.name;
       hideSuggestions();
+      state.openAfterEstimate=openOptions;
+      if(openOptions)$('destinationInput').blur();
       getRoute();
-      toast('Destino selecionado. Calculando estimativa.');if(p.numberRequested&&!p.exactNumber)vaigoMessage('⚠️ Número não encontrado na base. Arraste o pino de destino até a entrada correta e clique em Confirmar entrada da residência.');else vaigoMessage('Destino escolhido. Você pode arrastar os marcadores para refinar os pontos.');
+      toast(state.originReady?'Destino selecionado. Calculando trajeto.':'Destino selecionado. Informe o embarque ou use o GPS.');if(p.manualVerified)vaigoMessage('Entrada confirmada neste aparelho.');else if(p.exactNumber)vaigoMessage('Número encontrado. Para conferir a entrada, toque em Ver entrada no mapa.');else if(p.numberRequested)vaigoMessage('⚠️ Número não encontrado na base. Use Escolher no mapa para indicar a entrada correta e clique em Confirmar entrada da residência.');else vaigoMessage('Destino escolhido. Use Escolher no mapa para ajustar o destino.');
     }
     function chooseOrigin(p,mode='manual'){
       if(state.running)return;
-      state.origin=p;state.pickupMode=mode;
+      state.originReady=true;state.origin=p;state.pickupMode=mode;
       $('originInput').value=p.name;
       hideSuggestions();getRoute();
     }
@@ -470,8 +778,9 @@
           if(!state.accuracyCircle)state.accuracyCircle=L.circle([lat,lon],{radius:accuracy||25,stroke:false,fillColor:'#3186db',fillOpacity:.12}).addTo(state.map);
           else state.accuracyCircle.setLatLng([lat,lon]).setRadius(accuracy||25);
         }
-        if(state.pickupMode!=='manual'){
-          const moved=haversine(state.origin,{lat,lon})>.06;
+        if(!state.running && state.pickupMode!=='manual'){
+          state.originReady=true;
+          const moved=!lastRouteOrigin||haversine(lastRouteOrigin,{lat,lon})>.06;
           state.origin={name:'Minha localização atual',lat,lon};state.pickupMode='gps';
           $('originInput').value='Minha localização atual';
           if(first){if(state.dest)getRoute();else{updateMarkers();render();}}
@@ -494,12 +803,12 @@
       const long=[...new Set(arr)].join(', ');
       return {name:short,hint:long||'Resultado do mapa',lat:feature.geometry.coordinates[1],lon:feature.geometry.coordinates[0]};
     }
-    function hideSuggestions(){$('suggestions').hidden=true;$('suggestions').innerHTML='';}
+    function hideSuggestions(){clearTimeout(state.debounce);++state.searchSeq;state.abort?.abort();$('suggestions').hidden=true;$('suggestions').innerHTML='';}
     const nearbyCity='Francisco Beltrão, Paraná, Brasil';
     function renderAddressResults(results,field,source){
       $('suggestions').hidden=false;
       if(!results.length){$('suggestions').innerHTML='<div class="small-info" style="padding:11px">Endereço não encontrado. Tente o nome da rua, número e cidade ou escolha o destino no mapa.</div>';return;}
-      $('suggestions').innerHTML=results.map((p,i)=>`<button class="suggestion" type="button" data-suggest="${i}" role="option"><span class="suggestion-icon">${p.type==='place'?'🏪':'⌖'}</span><span style="min-width:0"><span class="suggestion-name">${escapeHtml(p.name)}</span><span class="suggestion-hint">${escapeHtml(p.exactNumber?'✅ Número confirmado · ':p.numberRequested&&p.type!=='place'?'⚠️ Número não confirmado · ':p.type==='place'?'📍 Estabelecimento · ':'Rua / endereço · ')}${escapeHtml(p.hint||'')}${Number.isFinite(p.km)?' · '+p.km.toFixed(1).replace('.',',')+' km':''}</span></span></button>`).join('')+`<div class="small-info" style="padding:6px 10px">Resultados de endereço e locais conhecidos · confira o ponto no mapa antes de solicitar</div>`;
+      $('suggestions').innerHTML=results.map((p,i)=>`<button class="suggestion" type="button" data-suggest="${i}" role="option"><span class="suggestion-icon">${p.type==='place'?'🏪':'⌖'}</span><span style="min-width:0"><span class="suggestion-name">${escapeHtml(p.name)}</span><span class="suggestion-hint">${escapeHtml(p.manualVerified?'Entrada confirmada neste aparelho · ':p.exactNumber?'Número encontrado no cadastro · ':p.type==='place'?'Estabelecimento · ':p.houseNumber?'📍 Número cadastrado próximo · ':p.numberRequested?'⚠️ Número solicitado não localizado · ':'Rua / endereço · ')}${escapeHtml(p.hint||'')}${p.source==='CNEFE — Censo 2022'?' · Cadastro IBGE 2022':''}${Number.isFinite(p.km)?' · '+p.km.toFixed(1).replace('.',',')+' km':''}</span></span></button>`).join('')+`<div class="small-info" style="padding:6px 10px">Resultados de endereço e locais conhecidos · confira o ponto no mapa antes de solicitar</div>`;
       document.querySelectorAll('[data-suggest]').forEach(b=>b.addEventListener('click',()=>{const p=results[Number(b.dataset.suggest)];field==='origin'?chooseOrigin(p):chooseDestination(p);}));
     }
     async function searchAddress(query,field){
@@ -511,11 +820,12 @@
         const url=new URL('/api/search',location.origin);url.searchParams.set('q',query);url.searchParams.set('mode','suggest');url.searchParams.set('lat',state.origin.lat);url.searchParams.set('lon',state.origin.lon);
         const response=await fetch(url,{signal:state.abort.signal});if(!response.ok)throw Error('Serviço de endereços indisponível');
         const data=await response.json();if(seq!==state.searchSeq)return;
-        if(data.results?.length)renderAddressResults(data.results,field,'Busca local');
-        else showManualSearch(field,'Não encontrei sugestões automáticas.');
+        const combined=[...localConfirmedAddresses(query),...(data.results||[]).filter(p=>p.exactNumber),...(data.results||[]).filter(p=>!p.exactNumber)].map(p=>({...p,requestedNumber:p.type==='place'?null:data.requestedNumber}));if(combined.length)renderAddressResults(combined,field,'Busca local');
+        else showManualSearch(field,data.providerStatus==='unavailable'?'Serviços públicos temporariamente indisponíveis.':'Nenhuma sugestão próxima. Tente o nome do comércio e a cidade ou pesquise pelo endereço.');
       }catch(err){if(err.name!=='AbortError'&&seq===state.searchSeq)showManualSearch(field,'Sugestões indisponíveis.');}
     }
     async function manualAddressSearch(field){
+      clearTimeout(state.debounce);
       const query=(field==='origin' ? $('originInput') : $('destinationInput')).value.trim();
       if(query.length<3){toast('Digite uma rua ou lugar para pesquisar.');return;}
       const seq=++state.searchSeq;
@@ -525,28 +835,34 @@
         const url=new URL('/api/search',location.origin);url.searchParams.set('q',query);url.searchParams.set('mode','address');url.searchParams.set('lat',state.origin.lat);url.searchParams.set('lon',state.origin.lon);
         const response=await fetch(url,{signal:state.abort.signal});if(!response.ok)throw Error('Não foi possível pesquisar');
         const data=await response.json();if(seq!==state.searchSeq)return;
-        renderAddressResults(data.results||[],field,'Busca local');
-      }catch(err){if(err.name!=='AbortError'&&seq===state.searchSeq)$('suggestions').innerHTML='<div class="small-info" style="padding:11px">Pesquisa indisponível. Confirme que abriu pelo servidor v6 (iniciar-vaigo.bat) e que possui internet.</div>';}
+        const combined=[...localConfirmedAddresses(query),...(data.results||[]).filter(p=>p.exactNumber),...(data.results||[]).filter(p=>!p.exactNumber)].map(p=>({...p,requestedNumber:p.type==='place'?null:data.requestedNumber}));if(combined.length){renderAddressResults(combined,field,'Busca local');if(data.partial&&!combined.some(p=>p.type==='place'))vaigoMessage('Número residencial não confirmado. Escolha a rua e ajuste o pino no mapa antes de confirmar.');}else showManualSearch(field,data.providerStatus==='unavailable'?'Serviços de endereços indisponíveis. Tente novamente.':'Nenhum resultado próximo. Confira o nome do comércio, acrescente a cidade ou escolha o ponto no mapa.');
+      }catch(err){if(err.name!=='AbortError'&&seq===state.searchSeq)$('suggestions').innerHTML='<div class="small-info" style="padding:11px">Pesquisa indisponível. Verifique sua conexão e tente novamente.</div>';}
     }
     function showManualSearch(field,message='Sugestões automáticas indisponíveis.'){
       $('suggestions').hidden=false;
-      $('suggestions').innerHTML=`<div class="small-info" style="padding:11px">${escapeHtml(message)}</div><button type="button" class="suggestion" id="manualSearchButton"><span class="suggestion-icon">⌕</span><span><strong>Pesquisar endereço completo</strong><span class="suggestion-hint">Ex.: Rua Maringá 1520, Francisco Beltrão, PR</span></span></button>`;
+      $('suggestions').innerHTML=`<div class="small-info" style="padding:11px">${escapeHtml(message)}</div><button type="button" class="suggestion" id="manualSearchButton"><span class="suggestion-icon">⌕</span><span><strong>Pesquisar comércio ou endereço</strong><span class="suggestion-hint">Digite o nome da empresa ou a rua e o número.</span></span></button>`;
       $('manualSearchButton').addEventListener('click',()=>manualAddressSearch(field));
     }
     
 // Ferramentas de localização e teste — dados locais, sem motoristas reais.
 state.favoritePlaces=[];
-try{const saved=JSON.parse(localStorage.getItem('vaigo_favorites_v1')||'[]');if(Array.isArray(saved))state.favoritePlaces=saved.filter(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lon)).slice(0,20)}catch(e){}
-state.pickupAdjust=false;state.demoDrivers=[];state.demoDriverTimer=null;
+try{const saved=JSON.parse(localStorage.getItem('vaigo_favorites_v1:'+account.email)||'[]');if(Array.isArray(saved))state.favoritePlaces=saved.filter(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lon)).slice(0,20)}catch(e){}
+state.pickupAdjust=false;state.demoDrivers=[
+ {lat:-26.079246,lon:-53.044253,angle:55},{lat:-26.075081,lon:-53.057338,angle:-32},
+ {lat:-26.085178,lon:-53.059193,angle:103},{lat:-26.070801,lon:-53.050213,angle:26},
+ {lat:-26.081938,lon:-53.048936,angle:68}
+];
+state.showFleet=true;
 $('vaigoUseGPS')?.addEventListener('click',()=>{
+ if(state.running)return;
  if(!state.gps || !state.userLocation){vaigoMessage('GPS ainda não disponível. Clique no alvo ao lado da origem, autorize a localização e tente novamente.');if(state.gpsWatch===null)requestGPS();return;}
- state.pickupAdjust=false;state.pickupMode='gps';
+ state.originReady=true;state.pickupAdjust=false;state.pickupMode='gps';
  state.origin={name:'Minha localização atual',lat:state.userLocation.lat,lon:state.userLocation.lon};
  $('originInput').value='Minha localização atual';getRoute();fitMap();
  vaigoMessage('Embarque restaurado para a posição informada pelo GPS (precisão ±'+Math.round(state.gpsAccuracy||0)+' m). Se necessário, ajuste o pino.');
 });
 function vaigoMessage(s){const el=$('vaigoToolsMsg');if(el)el.textContent=s;}
-function vaigoSavedFavorites(){try{localStorage.setItem('vaigo_favorites_v1',JSON.stringify(state.favoritePlaces))}catch(e){vaigoMessage('Não foi possível salvar neste navegador.');}}
+function vaigoSavedFavorites(){try{localStorage.setItem('vaigo_favorites_v1:'+account.email,JSON.stringify(state.favoritePlaces))}catch(e){vaigoMessage('Não foi possível salvar neste navegador.');}}
 function vaigoShowFavorites(){
  const field=state.searchField||'destination';
  if(!state.favoritePlaces.length){vaigoMessage('Nenhum favorito salvo ainda. Escolha um destino e clique em Salvar destino.');return;}
@@ -560,35 +876,60 @@ $('vaigoFavSave')?.addEventListener('click',()=>{
  state.favoritePlaces=[f,...state.favoritePlaces.filter(x=>Math.hypot(x.lat-f.lat,x.lon-f.lon)>0.00003)].slice(0,20);vaigoSavedFavorites();vaigoMessage('Favorito salvo apenas neste navegador.');
 });
 $('vaigoFavShow')?.addEventListener('click',vaigoShowFavorites);
-$('vaigoPinToggle')?.addEventListener('click',()=>{
- state.pickupAdjust=!state.pickupAdjust;
- $('vaigoPinToggle').style.background=state.pickupAdjust?'#d8f2e4':'#fafafa';
- vaigoMessage(state.pickupAdjust?'Toque no mapa para ajustar o ponto de embarque. O marcador também pode ser arrastado.':'Ajuste do embarque desativado.');
-});
-function vaigoDemoDrivers(){
- if(!state.map)return;
- if(state.demoDriverTimer){clearInterval(state.demoDriverTimer);state.demoDriverTimer=null;for(const m of state.demoDrivers)state.map.removeLayer(m);state.demoDrivers=[];vaigoMessage('Motoristas de demonstração ocultados.');return;}
- const p=state.origin;
- const offsets=[[.004,.003],[-.003,.006],[.005,-.005]];
- state.demoDrivers=offsets.map((d,i)=>L.marker([p.lat+d[0],p.lon+d[1]],{icon:L.divIcon({html:'<span style="display:grid;place-items:center;background:#fff;border:2px solid #11854f;border-radius:50%;width:35px;height:35px;font-size:18px">🚘</span>',className:'',iconSize:[35,35]})}).bindPopup('Motorista fictício '+(i+1)+' · Apenas demonstração').addTo(state.map));
- state.demoDriverTimer=setInterval(()=>{state.demoDrivers.forEach((m,i)=>{const pos=m.getLatLng();m.setLatLng([pos.lat+Math.sin(Date.now()/4000+i)*0.00008,pos.lng+Math.cos(Date.now()/4000+i)*0.00008])})},3000);
- vaigoMessage('3 carros fictícios se movendo para testes. Não representam motoristas conectados.');
+function clearMapChoice(){
+ state.pickOnMap=false;state.pickupAdjust=false;
+ $('mapPickButton').classList.remove('active');
+ $('mapPickButton').setAttribute('aria-pressed','false');
+ $('mapTip').textContent='Explore o mapa';
+ $('cancelMapChoice').hidden=true;
 }
-$('vaigoDrivers')?.addEventListener('click',vaigoDemoDrivers);
+function chooseOnMap(pickup){
+ if(state.running)return;
+ const cancel=pickup?state.pickupAdjust:state.pickOnMap;
+ clearMapChoice();if(cancel)return;
+ state.pickupAdjust=pickup;state.pickOnMap=!pickup;
+ $('mapPickButton').classList.toggle('active',!pickup);
+ $('mapPickButton').setAttribute('aria-pressed',String(!pickup));
+ $('cancelMapChoice').hidden=false;
+ $('mapTip').textContent=pickup?'Toque no ponto de embarque':'Toque no destino';
+ if(window.matchMedia('(max-width:810px)').matches)showSheet(false,true);
+ toast($('mapTip').textContent);
+}
+$('cancelMapChoice').addEventListener('click',clearMapChoice);
+$('vaigoPinToggle').addEventListener('click',()=>chooseOnMap(true));
+function fleetIcon(angle){
+ return L.divIcon({className:'fleet-icon',html:'<span class="fleet-car" style="transform:rotate('+angle+'deg)"><i></i></span>',iconSize:[18,34],iconAnchor:[9,17]});
+}
+function renderFleet(){
+ if(typeof refreshLiveFleet==='function') refreshLiveFleet();
+}
+$('vaigoDrivers').addEventListener('click',()=>{state.showFleet=!state.showFleet;renderFleet();});
 
 function bindSearch(id,field){
       const input=$(id);
-      input.addEventListener('input',()=>{if(state.running)return;clearTimeout(state.debounce);const query=input.value;state.debounce=setTimeout(()=>searchAddress(query,field),500);});
-      input.addEventListener('focus',()=>{state.searchField=field;if(input.value.length>=3 && !/Minha localização atual|São Paulo ·/.test(input.value))searchAddress(input.value,field);});
+      input.addEventListener('input',()=>{if(state.running)return;hideSuggestions();
+        if(field==='origin'){state.originReady=false;state.pickupMode='manual';}
+        else state.dest=null;
+        getRoute();
+        const query=input.value;state.debounce=setTimeout(()=>searchAddress(query,field),500);});
+      input.addEventListener('focus',()=>{hideSuggestions();state.searchField=field;clearMapChoice();if(!state.running && input.value.length>=3 && input.value!=='Minha localização atual')searchAddress(input.value,field);});
       input.addEventListener('keydown',e=>{if(e.key==='Escape')hideSuggestions();if(e.key==='Enter'){e.preventDefault();const first=$('suggestions').querySelector('[data-suggest]');if(first)first.click();else manualAddressSearch(field);}});
     }
-    $('vaigoConfirmHouse')?.addEventListener('click',()=>{if(!state.dest){vaigoMessage('Pesquise e selecione primeiro um destino.');return;}state.dest.manualVerified=true;state.dest.exactNumber=false;state.dest.name=state.dest.enteredAddress||state.dest.name;$('destinationInput').value=state.dest.name;vaigoMessage('✓ Ponto de chegada confirmado manualmente por você. Não houve verificação oficial do número residencial.');toast('Ponto de chegada confirmado no mapa.');});
+    $('zoomHouse').addEventListener('click',()=>{
+      if(!state.dest||!state.map){vaigoMessage('Selecione um destino e aguarde o mapa carregar.');return;}
+      if(window.matchMedia('(max-width:810px)').matches){
+        showSheet(false,true);
+      }
+      state.map.setView([state.dest.lat,state.dest.lon],18);
+      toast('Confira a entrada. Use Escolher no mapa para ajustar.');
+    });
+    $('vaigoConfirmHouse')?.addEventListener('click',()=>{if(!state.dest){vaigoMessage('Pesquise e selecione primeiro um destino.');return;}state.dest.manualVerified=true;state.dest.exactNumber=false;saveConfirmedAddress(state.dest);state.dest.name=state.dest.enteredAddress||state.dest.name;$('destinationInput').value=state.dest.name;vaigoMessage('✓ Ponto de chegada confirmado manualmente por você. Não houve verificação oficial do número residencial.');toast('Ponto de chegada confirmado no mapa.');});
 $('findAddressButton').addEventListener('click',()=>manualAddressSearch('destination'));
-    function setTab(t){state.tab=t;render();if(state.map)setTimeout(()=>state.map.invalidateSize(),80);}
+    function setTab(t){if(t==='admin'&&!account.admin)return;clearMapChoice();state.tab=t;render();if(window.matchMedia('(max-width:810px)').matches)showSheet(t!=='passenger'||!!state.estimateReady);if(state.map)setTimeout(()=>state.map.invalidateSize(),80);}
     function updateConfig(){
-      const config={};for(const id of Object.keys(DEFAULT))config[id]=num(id,DEFAULT[id],id==='commission'?0:0,100);
-      try{localStorage.setItem('vaigo_config',JSON.stringify(config));}catch(e){}
-      if(!state.dest){state.distance=num('manualKm',7.2,.5,2000);state.duration=num('manualMin',18,1,3000);state.routeQuality='Simulação manual';}
+      if(!account.admin)return;
+      
+      if(!state.running&&!state.dest){state.distance=num('manualKm',7.2,.5,2000);state.duration=num('manualMin',18,1,3000);state.routeQuality='Simulação manual';}
       render();
     }
     function manualEdited(){
@@ -613,23 +954,52 @@ $('findAddressButton').addEventListener('click',()=>manualAddressSearch('destina
       state.driverMarker=null;
     }
     function toggleRide(){
-      if(state.rideStage==='searching'||state.rideStage==='accepted'){
-        clearInterval(state.rideTimer);clearRideMarker();state.running=false;state.rideStage='idle';state.lockedFare=null;state.rideProgress=0;
+      clearMapChoice();
+      if(['searching','accepted','arrived'].includes(state.rideStage)){
+        clearInterval(state.rideTimer);clearRideMarker();state.assignedDriver=null;renderFleet();state.phone='';$('passengerPhone').value='';state.running=false;state.rideStage='idle';state.lockedFare=null;state.rideProgress=0;
         render();toast('Solicitação simulada cancelada.');return;
       }
       if(state.rideStage!=='idle')return;
+      if(!state.originReady){toast('Selecione o embarque no mapa, na busca ou pelo GPS.');return;}
       if(!state.dest){toast('Selecione um destino antes de solicitar a corrida.');return;}
+      const phone=$('passengerPhone').value.trim().replace(/[() .-]/g,'');
+      if(phone && !/^(?:\+55)?[1-9]\d{9,10}$/.test(phone)){toast('Informe o telefone com DDD.');return;}
+      state.phone=phone && (phone.startsWith('+')?phone:'+55'+phone);
+      ++routingSeq;activeRouteController?.abort();hideSuggestions();
       state.running=true;state.rideStage='searching';state.lockedFare=calc();state.rideProgress=0;
       setTab('passenger');render();toast('Solicitação simulada criada. Abra Motorista e app para aceitar.');
     }
     function driverAction(){
       if(state.rideStage==='searching'){
-        state.rideStage='accepted';render();toast('Motorista virtual aceitou o pedido.');return;
+        state.rideStage='accepted';
+        const pickup=[state.origin.lat,state.origin.lon];
+        state.assignedDriver=state.demoDrivers.reduce((nearest,driver)=>haversine(driver,state.origin)<haversine(nearest,state.origin)?driver:nearest);
+        const start=[state.assignedDriver.lat,state.assignedDriver.lon];
+        renderFleet();
+        if(state.map){
+          state.driverMarker=L.marker(start,{icon:fleetIcon(state.assignedDriver.angle)}).addTo(state.map);
+          state.map.fitBounds([start,pickup],{padding:[48,48],maxZoom:16});
+        }
+        const started=Date.now();
+        state.rideTimer=setInterval(()=>{
+          state.rideProgress=Math.min(1,(Date.now()-started)/15000);
+          state.driverMarker?.setLatLng(interpolateAlong([start,pickup],state.rideProgress));
+          if(state.rideProgress===1)clearInterval(state.rideTimer);
+          $('rideProgress').style.width=(100*state.rideProgress)+'%';
+        },500);
+        render();toast('Motorista a caminho do embarque.');return;
       }
       if(state.rideStage==='accepted'){
+        clearInterval(state.rideTimer);
+        state.driverMarker?.setLatLng([state.origin.lat,state.origin.lon]);
+        state.rideStage='arrived';state.rideProgress=1;
+        render();toast('Seu motorista chegou ao ponto de embarque.');return;
+      }
+      if(state.rideStage==='arrived'){
+        clearRideMarker();fitMap();
         state.rideStage='driving';state.rideProgress=0;
         const path=getPathCoords();
-        if(path&&state.map)state.driverMarker=L.marker(path[0],{icon:leafIcon('car')}).addTo(state.map);
+        if(path&&state.map)state.driverMarker=L.marker(path[0],{icon:fleetIcon(state.assignedDriver.angle)}).addTo(state.map);
         const started=Date.now();
         state.rideTimer=setInterval(()=>{
           state.rideProgress=Math.min(1,(Date.now()-started)/45000);
@@ -644,12 +1014,16 @@ $('findAddressButton').addEventListener('click',()=>manualAddressSearch('destina
       if(state.rideStage!=='driving')return;
       clearInterval(state.rideTimer);state.rideTimer=null;clearRideMarker();
       const c=state.lockedFare||calc();
-      const record={date:new Date().toLocaleDateString('pt-BR'),type:defs[state.selected].name,km:state.distance,fare:c.fare,driverNet:c.driverNet};
+      const record={date:new Date().toLocaleDateString('pt-BR'),type:defs[state.selected].name,destination:state.dest.name,km:state.distance,fare:c.fare,driverNet:c.driverNet};
       state.history.unshift(record);state.history=state.history.slice(0,20);
-      try{localStorage.setItem('vaigo_history',JSON.stringify(state.history));}catch(e){}
-      state.running=false;state.rideStage='idle';state.rideProgress=0;state.lockedFare=null;
+      try{localStorage.setItem('vaigo_history:'+account.email,JSON.stringify(state.history));}catch(e){}
+      state.assignedDriver=null;renderFleet();state.phone='';$('passengerPhone').value='';state.running=false;state.rideStage='idle';state.rideProgress=0;state.lockedFare=null;
       render();toast(`Corrida simulada concluída · passageiro ${money(c.fare)} · motorista ${money(c.driverNet)} após gasolina.`);
     }
+    function setZecaTheme(theme){const t=theme==='dark'?'dark':'light';const changed=document.documentElement.dataset.theme!==t;document.documentElement.dataset.theme=t;if(changed)state.applyBasemap?.();$('lightTheme').setAttribute('aria-pressed',String(t==='light'));$('darkTheme').setAttribute('aria-pressed',String(t==='dark'));}
+    setZecaTheme('dark');
+    $('lightTheme').addEventListener('click',()=>setZecaTheme('light'));
+    $('darkTheme').addEventListener('click',()=>setZecaTheme('dark'));
     $('settingsShortcut').addEventListener('click',()=>setTab('admin'));
     $('passengerTab').addEventListener('click',()=>setTab('passenger'));
     $('financeTab').addEventListener('click',()=>setTab('finance'));
@@ -657,38 +1031,185 @@ $('findAddressButton').addEventListener('click',()=>manualAddressSearch('destina
     $('gpsButton').addEventListener('click',requestGPS);
     $('recenterButton').addEventListener('click',()=>{if(state.userLocation&&state.map){state.map.setView([state.userLocation.lat,state.userLocation.lon],16);}else if(state.map){state.map.setView([state.origin.lat,state.origin.lon],15);toast('Toque em GPS para usar sua localização real.');}else toast('Mapa indisponível.');});
     $('zoomInButton').addEventListener('click',()=>state.map?.zoomIn());$('zoomOutButton').addEventListener('click',()=>state.map?.zoomOut());
-    $('mapPickButton').addEventListener('click',()=>{state.pickOnMap=!state.pickOnMap;$('mapPickButton').classList.toggle('active',state.pickOnMap);toast('Toque em qualquer ponto do mapa para marcar o destino.');});
+    $('mapPickButton').addEventListener('click',()=>chooseOnMap(false));
     $('resetRouteButton').addEventListener('click',()=>{if(state.running){toast('Conclua a simulação antes de limpar a rota.');return;}state.dest=null;$('destinationInput').value='';hideSuggestions();getRoute();toast('Rota removida.');});
     document.querySelectorAll('[data-quick]').forEach(b=>b.addEventListener('click',()=>chooseDestination(sampleDest[b.dataset.quick])));
     $('requestButton').addEventListener('click',toggleRide);
     $('driverAction').addEventListener('click',driverAction);
     bindSearch('originInput','origin');bindSearch('destinationInput','destination');
+    document.querySelectorAll('[data-clear]').forEach(button=>button.addEventListener('click',()=>{
+      if(state.running){toast('Finalize a corrida simulada antes de limpar o endereço.');return;}
+      clearTimeout(state.debounce);
+      ++state.searchSeq;
+      if(state.abort){state.abort.abort();state.abort=null;}
+      hideSuggestions();
+      const field=button.dataset.clear;
+      if(field==='destination'){
+        $('destinationInput').value='';state.dest=null;state.pickOnMap=false;
+        $('mapPickButton').classList.remove('active');
+        getRoute();
+        vaigoMessage('Destino removido. Digite outro endereço ou selecione no mapa.');
+        $('destinationInput').focus();
+      }else if(field==='origin'){
+        $('originInput').value='';
+        pauseGPS('GPS pausado');
+        state.pickupMode='manual';
+        state.originReady=false;getRoute();
+        vaigoMessage('Origem limpa. Digite outro endereço ou use o GPS.');
+        $('originInput').focus();
+      }
+    }));
+
     for(const id of Object.keys(DEFAULT))$(id).addEventListener('input',updateConfig);
     for(const id of ['manualKm','manualMin'])$(id).addEventListener('input',manualEdited);
     $('resetSettings').addEventListener('click',()=>{for(const [id,val] of Object.entries(DEFAULT))$(id).value=val;updateConfig();toast('Parâmetros restaurados.');});
     document.addEventListener('pointerdown',e=>{if(!$('suggestions').contains(e.target)&&!e.target.matches('#originInput,#destinationInput'))hideSuggestions();});
     if(window.L)initMap();else window.addEventListener('load',()=>{if(window.L)initMap();else $('mapFallback').style.display='flex';});
-    // Keep additional tools inside the scrollable lower panel on small screens.
-    // Previously the toolbar remained in a full-screen pointer-events:none
-    // sidebar layer, where it could visually overlap search and block touches.
-    const mobileLayout = window.matchMedia('(max-width:810px)');
-    const toolsBar = document.getElementById('vaigoTools');
-    const lowerPanel = document.querySelector('.panel-body');
-    const sidebarInner = document.querySelector('.sidebar-inner');
-    function placeToolsBar() {
-      if (mobileLayout.matches) {
-        if (toolsBar.parentElement !== lowerPanel) lowerPanel.prepend(toolsBar);
-      } else if (toolsBar.parentElement !== sidebarInner) {
-        sidebarInner.insertBefore(toolsBar, lowerPanel);
-      }
-    }
-    placeToolsBar();
-    mobileLayout.addEventListener?.('change',placeToolsBar);
-    window.addEventListener('resize',placeToolsBar);
+    const topPanel=document.querySelector('.panel-top'),bottomPanel=document.querySelector('.panel-body');
+     const topToggle=document.getElementById('topPanelToggle'),bottomToggle=document.getElementById('bottomPanelToggle');
+     function showSheet(lower,compact=false){
+       document.body.classList.toggle('show-lower-panel',lower);
+       topPanel.classList.toggle('is-collapsed',lower||compact);
+       topToggle.setAttribute('aria-expanded',String(!lower&&!compact));
+       topToggle.textContent=lower||compact?(state.dest?'Editar trajeto':'Para onde vamos?'):'';
+       topToggle.setAttribute('aria-label',lower||compact?topToggle.textContent:'Recolher busca');
+       bottomPanel.classList.remove('is-collapsed');
+       bottomToggle.setAttribute('aria-expanded',String(lower));
+       bottomToggle.textContent='Voltar à busca';
+       if(lower)bottomPanel.scrollTop=0;
+       if(state.map)setTimeout(()=>state.map.invalidateSize(),80);
+     }
+     function showCarOptions(){
+       if(state.running||!state.estimateReady)return;
+       setTab('passenger');
+     }
+
+     $('driverShortcut').addEventListener('click',()=>setTab('finance'));
+     topToggle.addEventListener('click',()=>{
+       clearMapChoice();
+       showSheet(false,!topPanel.classList.contains('is-collapsed'));
+     });
+     let dragStart=null;
+     topToggle.addEventListener('pointerdown',e=>{dragStart=e.clientY;topToggle.setPointerCapture(e.pointerId);});
+     topToggle.addEventListener('pointercancel',()=>{dragStart=null;});
+     topToggle.addEventListener('pointerup',e=>{
+       if(dragStart===null)return;
+       const delta=e.clientY-dragStart;dragStart=null;
+       if(Math.abs(delta)<24)return;
+       const consume=event=>event.stopImmediatePropagation();
+       topToggle.addEventListener('click',consume,{capture:true,once:true});
+       setTimeout(()=>topToggle.removeEventListener('click',consume,true),0);
+       showSheet(false,delta>0);
+     });
+     bottomToggle.addEventListener('click',()=>showSheet(false));
+     showSheet(false);
+    const prefs=$('preferences');
+    $('openPreferences').onclick=()=>prefs.showModal();
+    $('closePrefs').onclick=()=>prefs.close();
+    prefs.addEventListener('click',e=>{
+      if(e.target.closest('#driverShortcut,#settingsShortcut,#managePassword'))prefs.close();
+    },true);
+    prefs.addEventListener('click',e=>{
+      if(e.target.closest('#vaigoPinToggle') && state.pickupAdjust ||
+         e.target.closest('#zoomHouse') && state.dest && state.map ||
+         e.target.closest('#vaigoFavShow') && !$('suggestions').hidden) prefs.close();
+    });
     render();
-    window.addEventListener('pagehide',()=>{if(state.gpsWatch!==null)navigator.geolocation.clearWatch(state.gpsWatch);});
+    window.addEventListener('pagehide',()=>{if(state.gpsWatch!==null)pauseGPS();});
     
-  })();
+// Passenger map and opt-in GPS sharing use separate location requests.
+const liveMarkers = [];
+let fleetRequest = 0;
+async function refreshLiveFleet() {
+  if (!state.map) return;
+  const request = ++fleetRequest;
+  const badge = $('fleetStatus');
+  badge.hidden = !state.showFleet;
+  $('vaigoDrivers').setAttribute('aria-pressed',String(state.showFleet));
+  const clear = () => liveMarkers.splice(0).forEach(marker => marker.remove());
+  if (!state.showFleet) { clear(); return; }
+  const center = state.map.getCenter();
+  try {
+    const response = await fetch('/api/fleet?lat='+center.lat.toFixed(2)+'&lon='+center.lng.toFixed(2),{signal:AbortSignal.timeout(9000)});
+    if (!response.ok) throw Error();
+    const {drivers} = await response.json();
+    if (request !== fleetRequest) return;
+    clear();
+    for (const driver of drivers) {
+      const marker = L.marker([Number(driver.lat),Number(driver.lon)],{icon:fleetIcon(Number(driver.heading)),title:'Motorista disponível'}).bindPopup('Motorista disponível · posição aproximada').addTo(state.map);
+      liveMarkers.push(marker);
+    }
+    badge.textContent = drivers.length ? drivers.length+' disponível(is) nesta região' : 'Nenhum carro disponível';
+  } catch {
+    if (request === fleetRequest) { clear(); badge.textContent='Disponibilidade temporariamente indisponível'; }
+  }
+}
+
+let driverSession=null;
+const gpsText = message => $('liveGpsStatus').textContent=message;
+async function sendPosition(body) {
+  const response=await fetch('/api/fleet',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),keepalive:true,signal:AbortSignal.timeout(10000)});
+  if (!response.ok){
+    const error=new Error('Falha ao enviar localização');
+    error.status=response.status;throw error;
+  }
+}
+function stopDriver(message) {
+  const session=driverSession;
+  if (!session) return;
+  driverSession=null;
+  clearInterval(session.timer);
+  const offline=()=>sendPosition({token:session.token,offline:true}).then(refreshLiveFleet).catch(()=>{});
+  offline();
+  if(session.pending) session.pending.then(offline,offline);
+  $('liveGps').textContent='Ficar disponível';
+  gpsText(message);
+}
+function startDriver() {
+  if (driverSession) { stopDriver('Você está offline.'); return; }
+  if (!navigator.geolocation) { gpsText('GPS indisponível neste navegador.'); return; }
+  const token=Array.from(crypto.getRandomValues(new Uint8Array(32)),v=>v.toString(16).padStart(2,'0')).join('');
+  const session=driverSession={token,busy:false};
+  $('liveGps').textContent='Ficar offline';
+  gpsText('Aguardando permissão e sinal do GPS…');
+  function update() {
+    if(session.busy || session!==driverSession) return;
+    session.busy=true;
+    navigator.geolocation.getCurrentPosition(async position=>{
+      if(driverSession!==session) return;
+      try {
+        const {latitude:lat,longitude:lon,heading}=position.coords;
+        session.pending=sendPosition({token,lat,lon,heading});
+        await session.pending;
+        if(driverSession===session) { gpsText('Disponível · GPS atualizado às '+new Date().toLocaleTimeString('pt-BR')); refreshLiveFleet(); }
+      } catch(error){
+        if(driverSession===session){
+          if(error.status===401||error.status===403)stopDriver('Sessão expirada. Entre novamente.');
+          else gpsText('Sem conexão com o ZECA. Tentando novamente enquanto esta tela estiver aberta.');
+        }
+      }
+      finally { session.busy=false; session.pending=null; }
+    },error=>{
+      if(driverSession!==session)return;
+      session.busy=false;
+      if(error.code===1)stopDriver('Permita a localização no navegador para ficar disponível.');
+      else gpsText('Aguardando sinal do GPS. Tentando novamente.');
+    },{enableHighAccuracy:true,maximumAge:0,timeout:15000});
+  }
+  session.timer=setInterval(update,12000);
+  update();
+}
+$('liveGps').addEventListener('click',startDriver);
+window.addEventListener('pagehide',()=>stopDriver('Você está offline.'));
+document.addEventListener('visibilitychange',()=>{if(document.hidden) stopDriver('Compartilhamento pausado. Toque para ficar disponível novamente.'); else refreshLiveFleet();});
+if(state.map) state.map.on('moveend',refreshLiveFleet);
+refreshLiveFleet();
+setInterval(()=>{if(!document.hidden)refreshLiveFleet();},12000);
+
+  }
   </script>
+  <script src="/assets/ads.js?v=2"></script>
+  <script src="/assets/login.js"></script>
+
 </body>
 </html>
