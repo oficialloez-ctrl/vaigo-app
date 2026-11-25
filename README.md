@@ -1,20 +1,7 @@
-# VaiGo 🚗
+# ZECA · homologação em Francisco Beltrão
 
-Projeto colaborativo de demonstração de aplicativo de corridas.
+Aplicação web instalável para ensaios de corridas sem cobrança, com interface de passageiro, painel de motorista e administração por perfil. As corridas de homologação são persistidas no PostgreSQL. O painel operacional requer conexão e o motorista deve manter o aplicativo em primeiro plano.
 
-**Demo:** https://vaigo-gps-corridas.vercel.app
+O [caderno de homologação](docs/HOMOLOGACAO.md) reúne acesso por perfil, instalação, arquitetura, auditoria, testes executados, custos estimados, roteiro do piloto e pendências de lançamento.
 
-## Funcionalidades
-- Mapa e localização do usuário com permissão do navegador
-- Sugestões de destinos e pontos de interesse
-- Estimativa de rotas, tarifas, comissão e custo de combustível (padrão R$ 6,50/L)
-- Solicitação e aceite de corridas **simulados** (sem motoristas ou pagamentos reais)
-
-## Executar
-Interface local: `python -m http.server 8000` e acesse http://localhost:8000.
-A pesquisa de endereços precisa do endpoint Node.js em `api/search.js`, disponível na implantação Vercel. Para desenvolver com funções locais, configure a Vercel CLI e execute `npx vercel dev`.
-
-## Colaboração
-Use branches e pull requests. Não inclua senhas, dados pessoais ou chaves de API no repositório.
-
-**Nota:** não é um serviço de transporte operacional. Os provedores públicos de mapas/endereço têm limites e condições para utilização comercial.
+Para executar a aplicação com as funções Node, use a Vercel CLI em ambiente de desenvolvimento configurado com um banco isolado. O banco precisa do esquema legado de autenticação/configuração e da migração migrations/001-piloto.sql. Um servidor de arquivos estáticos serve apenas a interface.

@@ -351,6 +351,8 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
     #preferences button{max-width:100%;white-space:normal}
     #map{touch-action:none}
     @media(pointer:coarse){input:not([type="checkbox"]),select,textarea{font-size:max(16px,1rem)!important}}
+    #pilot{margin:auto;width:min(94vw,480px);max-height:86dvh;overflow:auto;overscroll-behavior:contain;touch-action:pan-y;padding:20px;border-radius:18px;background:var(--white);color:var(--ink);border:1px solid var(--line)}
+    #pilot::backdrop{background:#080d0bc4}#pilot header{display:flex;justify-content:space-between;align-items:center}#pilot button,#pilot a,#pilot input,#pilot select{display:inline-block;padding:10px;margin:3px;border:1px solid var(--line);background:var(--fill);color:var(--ink);border-radius:10px}#pilot label{display:block}#pilot input{width:100%}
   </style>
 </head>
 <body>
@@ -388,38 +390,25 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
           
           <section id="recentRides" aria-label="Corridas anteriores" hidden></section>
           <section id="adCarousel" aria-label="Publicidade" hidden><img id="adImage" alt="Anúncio"><div id="adDots"></div></section>
-          <div class="quick-dest" aria-label="Destinos sugeridos" style="display:none">
-            <button data-quick="ibirapuera">Parque Ibirapuera</button>
-            <button data-quick="congonhas">Congonhas</button>
-            <button data-quick="eldorado">Shopping Eldorado</button>
-          </div>
         </div>
         
 <div class="panel-body is-collapsed"><button type="button" id="bottomPanelToggle" class="mobile-collapse-btn" aria-expanded="false">Opções de carro</button>
           <div class="tab-bar" role="tablist" aria-label="Painéis"><button id="passengerTab" role="tab" aria-selected="true" class="active">Passageiro</button><button id="financeTab" role="tab" aria-selected="false">Motorista</button><button hidden id="adminTab" role="tab" aria-selected="false">ADM</button></div>
           <section id="passengerPanel" class="hidden" role="tabpanel" aria-labelledby="passengerTab">
-            <div class="section-title"><h2>Escolha uma viagem</h2><small>Valores estimados</small></div>
+            <div class="section-title"><h2>Escolha uma viagem</h2><small>Teste sem cobrança</small></div>
             <div class="vehicle-list" id="vehicleList"></div>
             <div class="route-stats"><svg class="ui-icon"><use href="#ico-route"/></svg><span id="tripDistance">7,2 km</span><span class="sep"></span><span id="tripDuration">18 min</span><span class="route-label" id="routeMode">Exemplo</span></div>
-            <div class="field" id="phoneField"><label for="passengerPhone">Telefone para o motorista ligar (opcional)</label><input type="tel" inputmode="tel" id="passengerPhone" placeholder="DDD e número" maxlength="24"></div>
-            <div aria-live="polite" id="rideBanner" class="trip-banner hidden"><strong id="rideHeadline">Solicitação em andamento</strong><p id="rideProgressLabel">Motorista virtual a caminho.</p><div class="progress"><span id="rideProgress"></span></div></div>
-            <button class="btn-primary" id="requestButton"><span id="requestButtonLabel">Simular corrida · R$ 28,04</span><svg class="ui-icon"><use href="#ico-arrow"/></svg></button>
-            <p class="note">Corrida simulada, sem chamada real ou cobrança.</p>
+            <button class="btn-primary" id="requestButton"><span id="requestButtonLabel">Revisar solicitação</span><svg class="ui-icon"><use href="#ico-arrow"/></svg></button>
+            <p class="note">Homologação entre aparelhos. Viagens sem cobrança.</p>
           </section>
           <section id="financePanel" class="hidden" role="tabpanel" aria-labelledby="financeTab">
-            <div class="fare-card"><strong>Disponibilidade no mapa</strong><p class="small-info">Ao ficar disponível, você compartilha sua posição aproximada com passageiros próximos enquanto esta página estiver aberta e visível.</p><button type="button" class="btn-primary" id="liveGps">Ficar disponível</button><p id="liveGpsStatus" class="small-info" aria-live="polite">Você está offline.</p></div>
-            <div id="driverRequest" class="fare-card" style="border:1px solid #dedede"><strong id="driverStatus">Painel do motorista · disponível</strong><p id="driverRequestInfo" class="small-info">Aguardando solicitação simulada do passageiro.</p><a hidden id="callPassenger">Ligar ao passageiro</a><button id="driverAction" class="btn-primary" style="margin-top:9px;display:none">Aceitar corrida</button></div><div class="fare-card" style="margin-top:12px">
-  <div class="stat-small">Valor a receber pela viagem (simulação)</div>
-  <div class="money-big green" id="driverOfferAmount">R$ 21,03</div>
-  <div id="driverOfferRoute" class="small-info">Aguardando rota · Distância e tempo estimados</div>
-</div>
-<p class="note">Esta é uma simulação. Não há motorista real conectado. O valor a receber é calculado descontando a taxa da plataforma, sem estimativa de combustível.</p>
-</section>
+<button type="button" class="btn-primary" id="pilotDriver">Abrir painel do motorista</button></section>
 <section id="adminPanel" class="hidden" role="tabpanel" aria-labelledby="adminTab">
   <div class="section-title"><h2>Administração da plataforma</h2><small>Ferramentas locais de teste</small></div>
+  <button type="button" hidden id="pilotAdmin">Gerenciar motoristas do piloto</button>
   <details id="adsEditor"><summary>Publicidade no painel do passageiro</summary><fieldset id="adFields" disabled><label><input type="checkbox" id="adVisible"> Mostrar anúncios aos passageiros</label><div id="adPreview"></div><label for="adFile">Adicionar imagem</label><input id="adFile" type="file" accept="image/png,image/jpeg,image/webp"><button class="btn-primary" id="adSave" type="button">Salvar publicidade</button></fieldset><p id="adStatus" role="status"></p></details>
   <section id="ownerGrants" hidden><h2>Acessos ao ADM</h2><form id="grantForm"><label for="grantEmail">E-mail do administrador</label><input id="grantEmail" type="email" required maxlength="254"><button class="btn-primary">Adicionar administrador</button></form><ul id="grantList"></ul><p id="grantStatus" role="status"></p></section>
-  <div class="section-title"><h2>Divisão da corrida</h2><small>Transparência por viagem</small></div>
+  <div class="section-title"><h2>Calculadora de teste</h2><small>Valores ilustrativos do administrador</small></div>
             <div class="fare-card"><div class="split-big"><div><div class="stat-small">Passageiro paga</div><div class="money-big" id="financeTotal">R$ 28,04</div></div><div style="text-align:right"><div class="stat-small">Motorista após gasolina</div><div id="financeDriverNet" class="green" style="font-size:20px;font-weight:820;white-space:nowrap">R$ 17,13</div></div></div><div class="divider"></div><div class="summary-line"><span>Receita do aplicativo (<span id="displayCommission">25%</span>)</span><strong id="appShare">R$ 7,01</strong></div><div class="summary-line"><span>Motorista antes da gasolina</span><strong id="driverGross">R$ 21,03</strong></div><div class="summary-line"><span>Custo estimado da gasolina</span><strong id="fuelCost">− R$ 3,90</strong></div><div class="divider"></div><div class="summary-line"><span><strong>Motorista após gasolina</strong></span><strong class="green" id="driverNet">R$ 17,13</strong></div></div>
             <div class="section-title"><h2>Ajustar valores</h2><small>Recalcula na hora</small></div>
             <div class="field-row"><div class="field"><label for="fuelPrice">Gasolina (R$/L)</label><input id="fuelPrice" type="number" min="0.1" max="30" step="0.01" value="6.50" inputmode="decimal" /></div><div class="field"><label for="kmPerLiter">Consumo (km/L)</label><input id="kmPerLiter" type="number" min="1" max="60" step="0.1" value="12" inputmode="decimal" /></div></div>
@@ -428,7 +417,7 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
             <div class="field-row"><div class="field"><label for="manualKm">Distância (km)</label><input id="manualKm" type="number" min="0.5" max="2000" step="0.1" value="7.2" inputmode="decimal" /></div><div class="field"><label for="manualMin">Duração (min)</label><input id="manualMin" type="number" min="1" max="3000" step="1" value="18" inputmode="decimal" /></div></div>
             <div class="input-info"><strong>Fórmula:</strong> máximo entre R$ 9,90 e (bandeirada + km × tarifa/km + min × tarifa/min), multiplicado pela categoria. Comissão incide no total. Gasolina = distância ÷ consumo × R$ por litro. Não inclui manutenção, impostos, pedágios, deslocamento até o passageiro ou taxas de pagamento.</div>
             <button class="btn-primary" id="saveSettings">Salvar tarifas</button><p id="settingsStatus" role="status"></p><button id="resetSettings" class="btn-primary" style="background:#333;min-height:40px;margin-top:12px"><svg class="ui-icon"><use href="#ico-refresh"/></svg> Restaurar valores padrão</button>
-            <div class="history"><div class="section-title"><h2>Corridas simuladas</h2><small id="historyCount">0 registros</small></div><div id="tripHistory" class="small-info">Nenhuma corrida concluída ainda.</div></div>
+            <div class="history"><div class="section-title"><h2>Histórico de corridas</h2><small id="historyCount">0 registros</small></div><div id="tripHistory" class="small-info">Nenhuma corrida concluída ainda.</div></div>
           </section>
         </div>
         <footer id="mapCredits" aria-label="Créditos do mapa"></footer>
@@ -442,8 +431,9 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
       <span id="fleetStatus" hidden></span><div class="map-tip" id="mapTip">Explore o mapa</div>
     </main>
   </div>
+<dialog id="pilot"><header><h2 id="pilotTitle">Minhas corridas</h2><button type="button" id="closePilot" aria-label="Fechar">×</button></header><p id="pilotMessage" role="status"></p><div id="pilotContent"></div></dialog>
 <dialog id="preferences" aria-labelledby="prefsTitle"><header><h2 id="prefsTitle">Configurações</h2><button type="button" id="closePrefs" aria-label="Fechar configurações">×</button></header>
-<section><h3>Conta</h3><button type="button" id="editGreeting" class="linkish" aria-label="Editar nome da saudação">Editar nome</button><form id="greetingForm" hidden><label for="firstName">Como quer ser chamado?</label><input id="firstName" autocomplete="given-name" maxlength="40" required><button type="submit">Salvar</button><small role="status" id="nameStatus"></small></form><button class="linkish" id="managePassword" type="button">Configurar senha</button><button class="linkish" id="logoutButton">Sair</button></section>
+<section><h3>Conta</h3><button type="button" id="myRides">Minhas corridas</button><button type="button" id="editGreeting" class="linkish" aria-label="Editar nome da saudação">Editar nome</button><form id="greetingForm" hidden><label for="firstName">Como quer ser chamado?</label><input id="firstName" autocomplete="given-name" maxlength="40" required><button type="submit">Salvar</button><small role="status" id="nameStatus"></small></form><button class="linkish" id="managePassword" type="button">Configurar senha</button><button class="linkish" id="logoutButton">Sair</button></section>
 <section><h3>Aparência</h3><div class="theme-switch" role="group" aria-label="Tema"><button type="button" id="lightTheme" aria-pressed="true">☀ Claro</button><button type="button" id="darkTheme" aria-pressed="false">☾ Escuro</button></div></section>
 <section><h3>Modo de uso</h3><button class="linkish" id="driverShortcut" type="button">Motorista</button><button type="button" id="settingsShortcut" hidden>Administração</button></section>
 <section><h3>Trajeto e GPS</h3><span class="status" id="gpsStatus"><span class="status-dot"></span><span id="gpsLabel">GPS não ativado</span></span><div id="vaigoTools" style="padding:9px 17px;background:#fff;border-bottom:1px solid #eee;display:flex;gap:6px;flex-wrap:wrap;position:relative;z-index:6">
@@ -487,15 +477,9 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
       comfort: {name:'Comfort', sub:'Executivo · até 4 pessoas', multiplier:1.35, liters:10, silhouette:'#56575c'},
       xl: {name:'XL', sub:'Espaçoso · até 6 pessoas', multiplier:1.85, liters:8, silhouette:'#454951'}
     };
-    const sampleDest = {
-      ibirapuera:{name:'Parque Ibirapuera', lat:-23.5874, lon:-46.6576},
-      congonhas:{name:'Aeroporto de Congonhas', lat:-23.6273, lon:-46.6566},
-      eldorado:{name:'Shopping Eldorado', lat:-23.5729, lon:-46.6961}
-    };
     const DEFAULT = {fuelPrice:6.5, kmPerLiter:12, commission:25, baseFare:5, priceKm:2.2, priceMinute:.4};
     const state = { origin:{name:'Francisco Beltrão · referência',lat:-26.079,lon:-53.053}, dest:null, gps:false, userLocation:null, gpsWatch:null, originReady:false, pickupMode:'default', selected:'eco', tab:'passenger', route:null, routeQuality:'Exemplo', distance:7.2, duration:18, pickOnMap:false, searchField:'destination', debounce:null, abort:null, searchSeq:0, map:null, startMarker:null, destMarker:null, accuracyCircle:null, routeLine:null, driverMarker:null, running:false, rideStage:'idle', lockedFare:null, rideTimer:null, rideProgress:0, latestPositionAt:null, lastReverseAt:0, gpsAccuracy:null, history:[] };
     try { const s=settings; if(s) for(const id of Object.keys(DEFAULT)) if(typeof s[id]==='number') $(id).value=s[id]; } catch(e){}
-    try { const h=JSON.parse(localStorage.getItem('vaigo_history:'+account.email)||'[]'); if(Array.isArray(h)) state.history=h.filter(t=>t && Number.isFinite(t.km) && Number.isFinite(t.fare) && Number.isFinite(t.driverNet)).slice(0,20); } catch(e){}
     let toastTimer;
     function toast(message) { $('toast').textContent=message; $('toast').classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>$('toast').classList.remove('show'),3900); }
     function svgCar(id) {
@@ -525,7 +509,7 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
     function renderVehicles() {
       const html=Object.entries(defs).map(([id,v])=>{
         const c=calc(id);
-        return `<button class="vehicle ${state.selected===id?'selected':''}" type="button" data-vehicle="${id}" aria-pressed="${state.selected===id}"><span class="car-picture">${svgCar(id)}</span><span><span class="v-name">${v.name}</span><span class="v-sub">${v.sub}</span></span><span class="v-price">${state.originReady&&state.dest?money(c.fare):'—'}<small>${state.originReady&&state.dest?'estimativa':'aguarda trajeto'}</small></span></button>`;
+        return `<button class="vehicle ${state.selected===id?'selected':''}" type="button" data-vehicle="${id}" aria-pressed="${state.selected===id}"><span class="car-picture">${svgCar(id)}</span><span><span class="v-name">${v.name}</span><span class="v-sub">${v.sub}</span></span><span class="v-price">Sem cobrança</span></button>`;
       }).join('');
       $('vehicleList').innerHTML=html;
       document.querySelectorAll('[data-vehicle]').forEach(b=>b.addEventListener('click',()=>{if(state.running)return;state.selected=b.dataset.vehicle;render();}));
@@ -545,7 +529,7 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
         row.append(label,detail);recent.append(row);
       }
       $('historyCount').textContent=`${state.history.length} ${state.history.length===1?'registro':'registros'}`;
-      $('tripHistory').innerHTML=state.history.length ? state.history.slice(0,6).map(t=>`<div class="history-entry"><span>${escapeHtml(t.date)} · ${escapeHtml(t.type)}<br><span style="color:#999">${t.km.toFixed(1).replace('.',',')} km · simulação</span></span><span style="text-align:right"><strong>${money(t.fare)}</strong><br><span class="green">motorista: ${money(t.driverNet)}</span></span></div>`).join('') : 'Nenhuma corrida concluída ainda.';
+      $('tripHistory').replaceChildren(...Array.from(recent.children, row=>row.cloneNode(true)));
     }
     function render() {
       renderVehicles();
@@ -555,32 +539,15 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
       $('routeMode').textContent=state.routeQuality;
       $('financeTotal').textContent=money(c.fare);
       $('financeDriverNet').textContent=money(c.driverNet);
-      $('driverOfferAmount').textContent=money(state.lockedFare?.driverGross??c.driverGross);
-      $('driverOfferRoute').textContent=`${state.distance.toFixed(1).replace('.',',')} km · ${Math.round(state.duration)} min estimados`;
       $('displayCommission').textContent=c.commission.toLocaleString('pt-BR')+'%';
       $('appShare').textContent=money(c.fee);
       $('driverGross').textContent=money(c.driverGross);
       $('fuelCost').textContent='− '+money(c.fuel);
       $('driverNet').textContent=money(c.driverNet);
-      const stage=state.rideStage;
-      $('phoneField').hidden=state.running;
-      const call=$('callPassenger');
-      call.hidden=!state.phone || !['accepted','arrived','driving'].includes(stage);
-      if(call.hidden)call.removeAttribute('href');else call.href='tel:'+state.phone;
-      $('requestButtonLabel').textContent=stage==='idle'?(state.originReady&&state.dest?`Solicitar corrida · ${money(c.fare)}`:'Informe embarque e destino'):stage==='searching'?'Cancelar solicitação':['accepted','arrived'].includes(stage)?'Cancelar (simulação)':stage==='driving'?'Viagem em andamento':'Concluída';
-      $('requestButton').disabled=stage==='driving';
-      $('rideHeadline').textContent=stage==='searching'?'Buscando motorista virtual':stage==='accepted'?'Motorista a caminho':stage==='arrived'?'Seu motorista chegou ao embarque':stage==='driving'?'Corrida simulada em andamento':'Corrida de demonstração';
-      $('rideProgressLabel').textContent=stage==='searching'?'Abra “Motorista e app” para aceitar a chamada.':stage==='accepted'?'Acompanhe a aproximação simulada no mapa.':stage==='arrived'?'Encontre o motorista no ponto de embarque.':stage==='driving'?`Motorista virtual percorreu ${Math.round(state.rideProgress*100)}% da rota.`:'';
-      $('driverStatus').textContent=stage==='idle'?'Painel do motorista · disponível':stage==='searching'?'Nova solicitação de corrida':stage==='accepted'?'A caminho do embarque':stage==='arrived'?'Aguardando passageiro':stage==='driving'?'Passageiro em viagem':'Disponível';
-      $('driverRequestInfo').textContent=stage==='idle'?'Aguardando solicitação simulada do passageiro.':`${defs[state.selected].name} · ${state.distance.toFixed(1).replace('.',',')} km · ${Math.round(state.duration)} min · Receber: ${money(state.lockedFare?.driverGross??c.driverGross)}`;
-      $('driverAction').style.display=stage!=='idle'?'flex':'none';
-      $('driverAction').textContent=stage==='searching'?'Aceitar corrida':stage==='accepted'?'Cheguei':stage==='arrived'?'Iniciar corrida':stage==='driving'?'Concluir corrida':'';
-      $('rideProgress').style.width=(state.rideProgress*100).toFixed(1)+'%';
-      $('originInput').readOnly=state.running;
-      $('destinationInput').readOnly=state.running;
-      $('rideBanner').classList.toggle('hidden',!state.running);
-      $('mapBadgeTitle').textContent=state.running?'Viagem simulada em andamento':(state.dest && state.originReady?'Rota preparada':'Sua cidade, sua corrida');
-      $('mapBadgeSubtitle').textContent=state.running?'Motorista virtual · não é uma corrida real':state.dest && state.originReady?`${state.distance.toFixed(1).replace('.',',')} km · ${Math.round(state.duration)} min`:'Ative o GPS ou pesquise um destino';
+      $('requestButtonLabel').textContent='Revisar solicitação';
+      $('requestButton').disabled=!state.estimateReady;
+      $('mapBadgeTitle').textContent=state.dest&&state.originReady?'Rota preparada':'Sua cidade, sua corrida';
+      $('mapBadgeSubtitle').textContent=state.dest&&state.originReady?state.distance+' km · '+state.duration+' min':'Ative o GPS ou pesquise um destino';
       $('passengerPanel').classList.toggle('hidden',state.tab!=='passenger'||!state.estimateReady);
       $('financePanel').classList.toggle('hidden',state.tab!=='finance');
       $('adminPanel').classList.toggle('hidden',state.tab!=='admin');
@@ -691,14 +658,14 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
         state.route={coords:points.map(c=>[c[1],c[0]])};
         $('manualKm').value=state.distance;$('manualMin').value=state.duration;
         updateMarkers();render();
-      }catch(e){ if(seq!==routingSeq)return;updateEstimatedRoute(state.origin,state.dest); }
+      }catch(e){ if(seq!==routingSeq)return;state.route=null; }
       finally {
         if(seq===routingSeq){
           activeRouteController=null;
-          state.estimateReady=true;
-          $('estimateStatus').textContent='';
+          state.estimateReady=!!state.route;
+          $('estimateStatus').textContent=state.route?'':'Rota indisponível. Selecione o destino novamente para tentar.';
           render();
-          if(state.openAfterEstimate && state.tab==='passenger')showCarOptions();
+          if(state.estimateReady && state.openAfterEstimate && state.tab==='passenger')showCarOptions();
           state.openAfterEstimate=false;
         }
       }
@@ -847,11 +814,7 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
 // Ferramentas de localização e teste — dados locais, sem motoristas reais.
 state.favoritePlaces=[];
 try{const saved=JSON.parse(localStorage.getItem('vaigo_favorites_v1:'+account.email)||'[]');if(Array.isArray(saved))state.favoritePlaces=saved.filter(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lon)).slice(0,20)}catch(e){}
-state.pickupAdjust=false;state.demoDrivers=[
- {lat:-26.079246,lon:-53.044253,angle:55},{lat:-26.075081,lon:-53.057338,angle:-32},
- {lat:-26.085178,lon:-53.059193,angle:103},{lat:-26.070801,lon:-53.050213,angle:26},
- {lat:-26.081938,lon:-53.048936,angle:68}
-];
+state.pickupAdjust=false;
 state.showFleet=true;
 $('vaigoUseGPS')?.addEventListener('click',()=>{
  if(state.running)return;
@@ -938,88 +901,6 @@ $('findAddressButton').addEventListener('click',()=>manualAddressSearch('destina
       state.routeQuality='Simulação manual';
       render();
     }
-    function getPathCoords(){
-      if(state.route?.coords?.length)return state.route.coords;
-      if(state.dest)return [[state.origin.lat,state.origin.lon],[state.dest.lat,state.dest.lon]];
-      return null;
-    }
-    function interpolateAlong(path,progress){
-      if(!path?.length)return null;
-      if(path.length===1)return path[0];
-      const weights=[];let total=0;for(let i=1;i<path.length;i++){const km=haversine({lat:path[i-1][0],lon:path[i-1][1]},{lat:path[i][0],lon:path[i][1]});weights.push(km);total+=km;}
-      let desired=total*Math.max(0,Math.min(1,progress));for(let i=0;i<weights.length;i++){if(desired<=weights[i]){const f=weights[i]>0?desired/weights[i]:0;return [path[i][0]+(path[i+1][0]-path[i][0])*f,path[i][1]+(path[i+1][1]-path[i][1])*f];}desired-=weights[i];}return path[path.length-1];
-    }
-    function clearRideMarker(){
-      if(state.driverMarker&&state.map)state.map.removeLayer(state.driverMarker);
-      state.driverMarker=null;
-    }
-    function toggleRide(){
-      clearMapChoice();
-      if(['searching','accepted','arrived'].includes(state.rideStage)){
-        clearInterval(state.rideTimer);clearRideMarker();state.assignedDriver=null;renderFleet();state.phone='';$('passengerPhone').value='';state.running=false;state.rideStage='idle';state.lockedFare=null;state.rideProgress=0;
-        render();toast('Solicitação simulada cancelada.');return;
-      }
-      if(state.rideStage!=='idle')return;
-      if(!state.originReady){toast('Selecione o embarque no mapa, na busca ou pelo GPS.');return;}
-      if(!state.dest){toast('Selecione um destino antes de solicitar a corrida.');return;}
-      const phone=$('passengerPhone').value.trim().replace(/[() .-]/g,'');
-      if(phone && !/^(?:\+55)?[1-9]\d{9,10}$/.test(phone)){toast('Informe o telefone com DDD.');return;}
-      state.phone=phone && (phone.startsWith('+')?phone:'+55'+phone);
-      ++routingSeq;activeRouteController?.abort();hideSuggestions();
-      state.running=true;state.rideStage='searching';state.lockedFare=calc();state.rideProgress=0;
-      setTab('passenger');render();toast('Solicitação simulada criada. Abra Motorista e app para aceitar.');
-    }
-    function driverAction(){
-      if(state.rideStage==='searching'){
-        state.rideStage='accepted';
-        const pickup=[state.origin.lat,state.origin.lon];
-        state.assignedDriver=state.demoDrivers.reduce((nearest,driver)=>haversine(driver,state.origin)<haversine(nearest,state.origin)?driver:nearest);
-        const start=[state.assignedDriver.lat,state.assignedDriver.lon];
-        renderFleet();
-        if(state.map){
-          state.driverMarker=L.marker(start,{icon:fleetIcon(state.assignedDriver.angle)}).addTo(state.map);
-          state.map.fitBounds([start,pickup],{padding:[48,48],maxZoom:16});
-        }
-        const started=Date.now();
-        state.rideTimer=setInterval(()=>{
-          state.rideProgress=Math.min(1,(Date.now()-started)/15000);
-          state.driverMarker?.setLatLng(interpolateAlong([start,pickup],state.rideProgress));
-          if(state.rideProgress===1)clearInterval(state.rideTimer);
-          $('rideProgress').style.width=(100*state.rideProgress)+'%';
-        },500);
-        render();toast('Motorista a caminho do embarque.');return;
-      }
-      if(state.rideStage==='accepted'){
-        clearInterval(state.rideTimer);
-        state.driverMarker?.setLatLng([state.origin.lat,state.origin.lon]);
-        state.rideStage='arrived';state.rideProgress=1;
-        render();toast('Seu motorista chegou ao ponto de embarque.');return;
-      }
-      if(state.rideStage==='arrived'){
-        clearRideMarker();fitMap();
-        state.rideStage='driving';state.rideProgress=0;
-        const path=getPathCoords();
-        if(path&&state.map)state.driverMarker=L.marker(path[0],{icon:fleetIcon(state.assignedDriver.angle)}).addTo(state.map);
-        const started=Date.now();
-        state.rideTimer=setInterval(()=>{
-          state.rideProgress=Math.min(1,(Date.now()-started)/45000);
-          if(state.driverMarker&&path)state.driverMarker.setLatLng(interpolateAlong(path,state.rideProgress));
-          render();if(state.rideProgress>=1)finishRide();
-        },1000);
-        render();toast('Viagem simulada iniciada: animação de 45 segundos.');return;
-      }
-      if(state.rideStage==='driving')finishRide();
-    }
-    function finishRide(){
-      if(state.rideStage!=='driving')return;
-      clearInterval(state.rideTimer);state.rideTimer=null;clearRideMarker();
-      const c=state.lockedFare||calc();
-      const record={date:new Date().toLocaleDateString('pt-BR'),type:defs[state.selected].name,destination:state.dest.name,km:state.distance,fare:c.fare,driverNet:c.driverNet};
-      state.history.unshift(record);state.history=state.history.slice(0,20);
-      try{localStorage.setItem('vaigo_history:'+account.email,JSON.stringify(state.history));}catch(e){}
-      state.assignedDriver=null;renderFleet();state.phone='';$('passengerPhone').value='';state.running=false;state.rideStage='idle';state.rideProgress=0;state.lockedFare=null;
-      render();toast(`Corrida simulada concluída · passageiro ${money(c.fare)} · motorista ${money(c.driverNet)} após gasolina.`);
-    }
     function setZecaTheme(theme){const t=theme==='dark'?'dark':'light';const changed=document.documentElement.dataset.theme!==t;document.documentElement.dataset.theme=t;if(changed)state.applyBasemap?.();$('lightTheme').setAttribute('aria-pressed',String(t==='light'));$('darkTheme').setAttribute('aria-pressed',String(t==='dark'));}
     setZecaTheme('dark');
     $('lightTheme').addEventListener('click',()=>setZecaTheme('light'));
@@ -1033,9 +914,6 @@ $('findAddressButton').addEventListener('click',()=>manualAddressSearch('destina
     $('zoomInButton').addEventListener('click',()=>state.map?.zoomIn());$('zoomOutButton').addEventListener('click',()=>state.map?.zoomOut());
     $('mapPickButton').addEventListener('click',()=>chooseOnMap(false));
     $('resetRouteButton').addEventListener('click',()=>{if(state.running){toast('Conclua a simulação antes de limpar a rota.');return;}state.dest=null;$('destinationInput').value='';hideSuggestions();getRoute();toast('Rota removida.');});
-    document.querySelectorAll('[data-quick]').forEach(b=>b.addEventListener('click',()=>chooseDestination(sampleDest[b.dataset.quick])));
-    $('requestButton').addEventListener('click',toggleRide);
-    $('driverAction').addEventListener('click',driverAction);
     bindSearch('originInput','origin');bindSearch('destinationInput','destination');
     document.querySelectorAll('[data-clear]').forEach(button=>button.addEventListener('click',()=>{
       if(state.running){toast('Finalize a corrida simulada antes de limpar o endereço.');return;}
@@ -1145,69 +1023,25 @@ async function refreshLiveFleet() {
   }
 }
 
-let driverSession=null;
-const gpsText = message => $('liveGpsStatus').textContent=message;
-async function sendPosition(body) {
-  const response=await fetch('/api/fleet',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),keepalive:true,signal:AbortSignal.timeout(10000)});
-  if (!response.ok){
-    const error=new Error('Falha ao enviar localização');
-    error.status=response.status;throw error;
-  }
+let assignedMarker=null;
+function displayTrips(rides){
+ const recent=rides.filter(r=>r.sou_passageiro&&r.estado==='concluida');
+ state.history=recent.map(r=>({destination:r.destino.name,date:new Date(r.alterada).toLocaleDateString('pt-BR'),km:Number(r.km)}));
+ renderHistory();
+ const trip=rides.find(r=>r.sou_passageiro&&r.lat!=null&&r.lon!=null&&['aceita','chegou','em_viagem'].includes(r.estado));
+ if(!trip||!state.map){assignedMarker?.remove();assignedMarker=null;return;}
+ const pos=[Number(trip.lat),Number(trip.lon)];
+ if(assignedMarker)assignedMarker.setLatLng(pos);
+ else assignedMarker=L.marker(pos,{icon:fleetIcon(0),title:'Seu motorista'}).bindPopup('Seu motorista').addTo(state.map);
 }
-function stopDriver(message) {
-  const session=driverSession;
-  if (!session) return;
-  driverSession=null;
-  clearInterval(session.timer);
-  const offline=()=>sendPosition({token:session.token,offline:true}).then(refreshLiveFleet).catch(()=>{});
-  offline();
-  if(session.pending) session.pending.then(offline,offline);
-  $('liveGps').textContent='Ficar disponível';
-  gpsText(message);
-}
-function startDriver() {
-  if (driverSession) { stopDriver('Você está offline.'); return; }
-  if (!navigator.geolocation) { gpsText('GPS indisponível neste navegador.'); return; }
-  const token=Array.from(crypto.getRandomValues(new Uint8Array(32)),v=>v.toString(16).padStart(2,'0')).join('');
-  const session=driverSession={token,busy:false};
-  $('liveGps').textContent='Ficar offline';
-  gpsText('Aguardando permissão e sinal do GPS…');
-  function update() {
-    if(session.busy || session!==driverSession) return;
-    session.busy=true;
-    navigator.geolocation.getCurrentPosition(async position=>{
-      if(driverSession!==session) return;
-      try {
-        const {latitude:lat,longitude:lon,heading}=position.coords;
-        session.pending=sendPosition({token,lat,lon,heading});
-        await session.pending;
-        if(driverSession===session) { gpsText('Disponível · GPS atualizado às '+new Date().toLocaleTimeString('pt-BR')); refreshLiveFleet(); }
-      } catch(error){
-        if(driverSession===session){
-          if(error.status===401||error.status===403)stopDriver('Sessão expirada. Entre novamente.');
-          else gpsText('Sem conexão com o ZECA. Tentando novamente enquanto esta tela estiver aberta.');
-        }
-      }
-      finally { session.busy=false; session.pending=null; }
-    },error=>{
-      if(driverSession!==session)return;
-      session.busy=false;
-      if(error.code===1)stopDriver('Permita a localização no navegador para ficar disponível.');
-      else gpsText('Aguardando sinal do GPS. Tentando novamente.');
-    },{enableHighAccuracy:true,maximumAge:0,timeout:15000});
-  }
-  session.timer=setInterval(update,12000);
-  update();
-}
-$('liveGps').addEventListener('click',startDriver);
-window.addEventListener('pagehide',()=>stopDriver('Você está offline.'));
-document.addEventListener('visibilitychange',()=>{if(document.hidden) stopDriver('Compartilhamento pausado. Toque para ficar disponível novamente.'); else refreshLiveFleet();});
+setupPilot(account,()=>state.originReady&&state.dest&&state.estimateReady?{from:state.origin,to:state.dest,category:state.selected}:null,refreshLiveFleet,displayTrips);
 if(state.map) state.map.on('moveend',refreshLiveFleet);
 refreshLiveFleet();
 setInterval(()=>{if(!document.hidden)refreshLiveFleet();},12000);
 
   }
   </script>
+  <script src="/assets/piloto.js"></script>
   <script src="/assets/ads.js?v=2"></script>
   <script src="/assets/login.js"></script>
 
