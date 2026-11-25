@@ -39,4 +39,16 @@ function lookup({q,lat,lon,limit=12}){
  }
  return found.sort((a,b)=>a.km-b.km).slice(0,limit);
 }
-module.exports={lookup};
+let establishments;
+function lookupPlaces(q){
+ if(!establishments){
+  const file=path.join(process.cwd(),'data/cnefe/4108403-places.json.gz');
+  establishments=JSON.parse(gunzipSync(fs.readFileSync(file))).map(row=>({row,words:norm(row[0]).split(' ')}));
+ }
+ const terms=norm(q.split(',')[0]).replace(/ fran(?:cisco)? beltrao(?: pr)?$/,'').split(' ').filter(t=>t&&!['de','do','da','dos','das'].includes(t));
+ if(!terms.length)return [];
+ return establishments.filter(e=>terms.every(term=>e.words.some(w=>w===term||(term.length>=2&&w.startsWith(term))))).map(({row:[name,street,number,area,lat,lon]})=>({
+  name,hint:[street,number,area,'Francisco Beltrão','PR'].filter(Boolean).join(', '),lat,lon,type:'place',houseNumber:number||null,source:'CNEFE — Censo 2022'
+ }));
+}
+module.exports={lookup,lookupPlaces};

@@ -22,6 +22,7 @@ with zipfile.ZipFile(io.BytesIO(blob)) as archive:
                 if value is not None and str(value).strip():return str(value).strip()
             return ''
         rows=[];seen=set();invalid=0
+        places=set()
         for row in reader:
             street=field(row,'NOM_SEGLOGR','NOM_LOG','NOM_LOGRADOURO')
             number=field(row,'NUM_ENDERECO','NUM_LOG')
@@ -37,9 +38,16 @@ with zipfile.ZipFile(io.BytesIO(blob)) as archive:
                 detail=' '.join(filter(None,[field(row,f'NOM_COMP_ELEM{i}'),field(row,f'VAL_COMP_ELEM{i}')]))
                 if detail and detail not in details:details.append(detail)
             item=[road,number if number not in ('','0') else None,field(row,'DSC_LOCALIDADE','NOM_BAIRRO','BAIRRO'),field(row,'CEP'),round(a,6),round(b,6),field(row,'NV_GEO_COORD'),' · '.join(details)]
+            label=field(row,'DSC_ESTABELECIMENTO')
+            if label and field(row,'COD_ESPECIE') in {'3','4','5','6'} and not re.search(r'\b(VAG[OA]|VAZI[OA]|DESOCUPAD[OA]|SEM IDENTIFICACAO)\b',label.upper()):
+                places.add((label,road,item[1] or '',item[2],a,b))
             key=tuple(item)
             if key in seen:continue
             seen.add(key);rows.append(item)
 path=pathlib.Path('data/cnefe')/(code+'.json.gz');path.parent.mkdir(parents=True,exist_ok=True)
 path.write_bytes(gzip.compress(json.dumps({'municipio':code,'fonte':'IBGE CNEFE Censo 2022','columns':['rua','numero','bairro','cep','lat','lon','nivel_geocodificacao','complemento'],'rows':rows},ensure_ascii=False,separators=(',',':')).encode('utf-8'),mtime=0))
 print('Gravado',path,'pontos distintos',len(rows),'linhas lidas',reader.line_num-1,'incompletos',invalid)
+
+places_path=path.with_name(code+'-places.json.gz')
+places_path.write_bytes(gzip.compress(json.dumps(sorted(places),ensure_ascii=False,separators=(',',':')).encode(),mtime=0))
+print('Estabelecimentos distintos:',len(places))
