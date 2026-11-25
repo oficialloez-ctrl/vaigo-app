@@ -650,8 +650,9 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
       const coords=state.route?.coords||[[state.origin.lat,state.origin.lon],[state.dest.lat,state.dest.lon]];
       const size=state.map.getSize();
       const mobile=window.matchMedia('(max-width:810px)').matches;
-      const top=mobile?Math.min(size.y*.4,document.querySelector('.panel-top').getBoundingClientRect().bottom+10):45;
-      const bottom=mobile?Math.min(size.y*.46,size.y-document.querySelector('.panel-body').getBoundingClientRect().top+10):45;
+      const top=mobile?24:45;
+      const sheet=document.querySelector('.sidebar-inner').getBoundingClientRect();
+      const bottom=mobile?Math.min(size.y*.8,Math.max(24,$('map').getBoundingClientRect().bottom-sheet.top+12)):45;
       state.map.fitBounds(coords,{paddingTopLeft:[28,top],paddingBottomRight:[28,bottom],maxZoom:16});
     }
     function updateMarkers() {
@@ -663,9 +664,10 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
       if(state.dest && state.originReady) {const coords=state.route?.coords || [[state.origin.lat,state.origin.lon],[state.dest.lat,state.dest.lon]];state.routeLine=L.polyline(coords,{className:'trip-line',color:'#168057',weight:4,opacity:.90,lineCap:'round',lineJoin:'round',dashArray:state.route?'':'6,10'}).addTo(state.map);}
       fitMap();
     }
-    let routingSeq=0, activeRouteController=null;
+    let routingSeq=0, activeRouteController=null, lastRouteOrigin=null;
     async function getRoute(){
       const seq=++routingSeq;
+      lastRouteOrigin=state.originReady&&state.dest?{lat:state.origin.lat,lon:state.origin.lon}:null;
       if(activeRouteController)activeRouteController.abort();
       activeRouteController=null;
       state.route=null;
@@ -778,7 +780,7 @@ html[data-theme="dark"] .leaflet-container{background:#222a26}
         }
         if(!state.running && state.pickupMode!=='manual'){
           state.originReady=true;
-          const moved=haversine(state.origin,{lat,lon})>.06;
+          const moved=!lastRouteOrigin||haversine(lastRouteOrigin,{lat,lon})>.06;
           state.origin={name:'Minha localização atual',lat,lon};state.pickupMode='gps';
           $('originInput').value='Minha localização atual';
           if(first){if(state.dest)getRoute();else{updateMarkers();render();}}
@@ -1147,7 +1149,10 @@ let driverSession=null;
 const gpsText = message => $('liveGpsStatus').textContent=message;
 async function sendPosition(body) {
   const response=await fetch('/api/fleet',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),keepalive:true,signal:AbortSignal.timeout(10000)});
-  if (!response.ok) throw Error();
+  if (!response.ok){
+    const error=new Error('Falha ao enviar localização');
+    error.status=response.status;throw error;
+  }
 }
 function stopDriver(message) {
   const session=driverSession;
@@ -1177,9 +1182,19 @@ function startDriver() {
         session.pending=sendPosition({token,lat,lon,heading});
         await session.pending;
         if(driverSession===session) { gpsText('Disponível · GPS atualizado às '+new Date().toLocaleTimeString('pt-BR')); refreshLiveFleet(); }
-      } catch { if(driverSession===session) stopDriver('Falha na conexão. Ative novamente para compartilhar.'); }
+      } catch(error){
+        if(driverSession===session){
+          if(error.status===401||error.status===403)stopDriver('Sessão expirada. Entre novamente.');
+          else gpsText('Sem conexão com o ZECA. Tentando novamente enquanto esta tela estiver aberta.');
+        }
+      }
       finally { session.busy=false; session.pending=null; }
-    },error=>{ if(driverSession===session) stopDriver(error.code===1?'Permita a localização no navegador para ficar disponível.':'Sem sinal de GPS. Tente novamente.'); },{enableHighAccuracy:true,maximumAge:0,timeout:15000});
+    },error=>{
+      if(driverSession!==session)return;
+      session.busy=false;
+      if(error.code===1)stopDriver('Permita a localização no navegador para ficar disponível.');
+      else gpsText('Aguardando sinal do GPS. Tentando novamente.');
+    },{enableHighAccuracy:true,maximumAge:0,timeout:15000});
   }
   session.timer=setInterval(update,12000);
   update();
